@@ -10,6 +10,10 @@ from make_colors import make_colors
 import argparse
 import traceback
 import requests
+import re
+import winsound
+from datetime import datetime
+import socket
 
 class notify(object):
     def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None):
@@ -55,7 +59,7 @@ class notify(object):
         if not host:
             host = self.host
         if not port:
-            port = port
+            port = self.port
         if not title:
             title = self.conf.get_config('growl', 'title')
         if not app:
@@ -96,7 +100,7 @@ class notify(object):
             print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl not actieve', 'lightred', 'lightyellow'))
             return False            
             
-    def pushbullet(self, title = None, message = None, api = None):
+    def pushbullet(self, title = None, message = None, api = None, debugx = True):
         if not api:
             api = self.pushbullet_api
         if not api:
@@ -110,7 +114,8 @@ class notify(object):
         if not message:
             message = self.conf.get_config('pushbullet', 'message')
         if not api:
-            print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
+            if debugx:
+                print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
             return False
         if self.active_pushbullet or self.conf.get_config('service', 'pushbullet', value = 0) == "1":
             try:
@@ -126,8 +131,8 @@ class notify(object):
         else:
             print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet not actieve', 'lightred', 'lightyellow'))
             return False            
-        
-    def nmd(self, title = None, message = None, api = None):
+    
+    def nmd(self, title = None, message = None, api = None, timeout = 3, debugx = True):
         url = "https://www.notifymydevice.com/push"#?ApiKey={0}&PushTitle={1}&PushText={2}"
         if not api:
             api = self.nmd_api
@@ -150,26 +155,85 @@ class notify(object):
         debug(data = data)
         if self.active_nmd or self.conf.get_config('service', 'nmd', value = 0) == "1":
             try:
-                a = requests.post(url, data = data)
+                a = requests.post(url, data = data, timeout = timeout)
                 return a
             except:
+                traceback.format_exc()
                 if os.getenv('DEBUG'):
-                    print(make_colors("ERROR [PUSHBULLET]:", 'lightwhite', 'lightred', 'blink'))
+                    print(make_colors("ERROR [NMD]:", 'lightwhite', 'lightred', 'blink'))
                     print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
-                print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
+                if debugx:
+                    print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
                 return False
         else:
             print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
             return False
         
-    def notify(self, title = None, message = None, app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True):
+    def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True):
         if growl:
             self.growl(title, app, event, message, host, port, timeout, icon)
         if pushbullet:
-            self.pushbullet(title, message, pushbullet_api)
+            self.pushbullet(title, message, pushbullet_api, debugx)
         if nmd:
-            self.nmd(title, message, nmd_api)
+            self.nmd(title, message, nmd_api, debugx = debugx)
+        self.client(title, message)
             
+    def server(self, host = '0.0.0.0', port = 33000):
+        sound = ''
+        active_sound = False
+        if self.conf.get_config('sound', 'active', '1') == 1:
+            active_sound = True
+            sound = os.path.join(os.path.dirname(__file__), 'sound.wav')
+            if not os.path.isfile(sound):
+                sound = self.conf.get_config('sound', 'file')
+        
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.bind((host, port))
+            print(make_colors("Server Listen On: ", 'lightwhite', 'lightblue') + make_colors(host, 'lightwhite', 'lightred') + ":" + make_colors(str(
+                port), 'black', 'lightcyan'))            
+            while True:
+                try:
+                    #s.listen(8096) #TCP
+                    #conn, addr = s.accept() #TCP
+                    data, addr = s.recvfrom(8096)
+                    
+                    if data:
+                        #data = conn.recv(8096) #TCP
+                        title = ''
+                        message = ''
+                        data_title = re.findall('.*?title:(.*?)message:', data)
+                        if data_title:
+                            title = data_title[0].strip()
+                        data_message = re.findall('.*?message:(.*?)$', data)
+                        if data_message:
+                            message = data_message[0].strip()
+                        date = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S%f')
+                        
+                        if title and message:
+                            print(make_colors(date, 'lightyellow') + " - " + make_colors("title =>", 'black', 'lightgreen') + " " + make_colors(str(title), 'lightgreen') + " " + make_colors("message =>", 'lightwhite', 'lightblue') + " " + make_colors(message, 'lightblue'))
+                            if active_sound and sound:
+                                winsound.PlaySound(sound, winsound.SND_ALIAS)
+                            #try:
+                                #self.notify(title, message, "Notify", "Receive", debugx = False)
+                            #except:
+                                #pass
+                        #print("data =", data)
+                        #print("title =", title)
+                        #print("message =", message)
+                        
+                except:
+                    traceback.format_exc()
+                    sys.exit()
+        except:
+            traceback.format_exc()
+            sys.exit()
+        
+    def client(self, title, message, host = '127.0.0.1', port = 33000):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        data = "title: {0} message: {1}".format(title, message)
+        s.sendto(data, (host, port))
+    
     def usage(self):
         parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter)
         parser.add_argument('-g', '--growl', action = 'store_true', help = 'Active Growl')
@@ -185,19 +249,36 @@ class notify(object):
         parser.add_argument('-t', '--timeout', action = 'store', help = 'Timeout for Growl and Snarl')
         parser.add_argument('TITLE', action = 'store', help = 'Title of Message')
         parser.add_argument('MESSAGE', action = 'store', help = 'Message')
+        parser.add_argument('-s', '--server', action = 'store_true', help = 'start server')
+        parser.add_argument('-c', '--client', action = 'store_true', help = 'start test client')
         
         if len(sys.argv) == 1:
             parser.print_help()
+            
         else:
-            args = parser.parse_args()
-            if args.growl:
-                self.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.host, args.port, args.timeout, args.icon)
-            if args.pushbullet:
-                #print("type =", type(self.pushbullet))
-                self.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
-            if args.nmd:
-                self.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
+            if '-s' in sys.argv[1:]:
+                self.server()
+            else:
+                args = parser.parse_args()
+                
+                if args.growl:
+                    self.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.host, args.port, args.timeout, args.icon)
+                elif args.pushbullet:
+                    #print("type =", type(self.pushbullet))
+                    self.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
+                elif args.nmd:
+                    self.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
+                else:
+                    self.notify(args.TITLE, args.MESSAGE, args.app, args.event, args.host, args.port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api)
+                if args.server:
+                    self.server()
+                if args.client:
+                    self.client('this is title', 'this is message !')
+                #self.client(args.TITLE, args.MESSAGE)
+                
                 
 if __name__ == '__main__':
     c = notify()
     c.usage()
+    #c.server()
+    #c.test_client()
