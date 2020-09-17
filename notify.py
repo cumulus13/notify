@@ -69,6 +69,10 @@ class notify(object):
                     self.pushbullet(title, message)                    
         
     def growl(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None):
+        icon_str = None
+        if icon and not os.path.isfile(icon):
+            icon_str = icon
+            
         if not title:
             title = self.title
         if not app:
@@ -115,10 +119,13 @@ class notify(object):
         if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1":
             growl = sendgrowl.growl()
             error = False
+            if icon and not os.path.isfile(icon):
+                icon = None
+                
             if isinstance(host, list):
                 for i in host:
                     try:
-                        growl.publish(app, event, title, message, i, port, timeout, iconpath = icon)
+                        growl.publish(app, event, title, message, i, port, timeout, icon_str, icon)
                         return True
                     except:
                         if os.getenv('DEBUG'):
@@ -127,7 +134,7 @@ class notify(object):
                             error = True
             else:
                 try:
-                    growl.publish(app, event, title, message, host, port, timeout, iconpath = icon)
+                    growl.publish(app, event, title, message, host, port, timeout, icon_str, icon)
                     return True
                 except:
                     if os.getenv('DEBUG'):
@@ -281,6 +288,8 @@ class notify(object):
             data = "title: {0} message: {1}".format(title, message)
         except:
             data = "title: {0} message: {1}".format(title.encode('utf-8'), message.encode('utf-8'))
+        if sys.version_info.major == 3:
+            data = bytes(data.encode('utf-8'))
         s.sendto(data, (host, port))
         
     def test(self):
