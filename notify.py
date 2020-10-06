@@ -1,4 +1,4 @@
-#!c:/SDK/Anaconda2/python.exe
+#!/usr/bin/env python2
 from __future__ import print_function
 import sys, os
 import argparse
@@ -14,7 +14,10 @@ import re
 if sys.platform == 'win32':
     import winsound
 else:
-    import winsound_linux as winsound
+	if sys.version_info.major == 3:
+	    from . import winsound_linux as winsound
+	else:
+	    import winsound_linux as winsound
 from datetime import datetime
 import socket
 
@@ -68,11 +71,8 @@ class notify(object):
                 if active_pushbullet:
                     self.pushbullet(title, message)                    
         
-    def growl(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None):
-        icon_str = None
-        if icon and not os.path.isfile(icon):
-            icon_str = icon
-            
+    def growl(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None):
+        
         if not title:
             title = self.title
         if not app:
@@ -119,13 +119,11 @@ class notify(object):
         if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1":
             growl = sendgrowl.growl()
             error = False
-            if icon and not os.path.isfile(icon):
-                icon = None
                 
             if isinstance(host, list):
                 for i in host:
                     try:
-                        growl.publish(app, event, title, message, i, port, timeout, icon_str, icon)
+                        growl.publish(app, event, title, message, i, port, timeout, icon, iconpath)
                         return True
                     except:
                         if os.getenv('DEBUG'):
@@ -134,7 +132,7 @@ class notify(object):
                             error = True
             else:
                 try:
-                    growl.publish(app, event, title, message, host, port, timeout, icon_str, icon)
+                    growl.publish(app, event, title, message, host, port, timeout, icon, iconpath)
                     return True
                 except:
                     if os.getenv('DEBUG'):
@@ -142,6 +140,7 @@ class notify(object):
                         print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
                     return False
             if error:
+                print("ERROR:", True)
                 return False
         else:
             print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl not actieve', 'lightred', 'lightyellow'))
@@ -222,9 +221,9 @@ class notify(object):
             print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
             return False
         
-    def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True):
+    def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
         if growl:
-            self.growl(title, app, event, message, host, port, timeout, icon)
+            self.growl(title, app, event, message, host, port, timeout, icon, iconpath)
         if pushbullet:
             self.pushbullet(title, message, pushbullet_api, debugx)
         if nmd:
