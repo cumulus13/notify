@@ -222,6 +222,28 @@ class notify(object):
             return False
         
     def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
+        if self.title:
+            title = self.title
+        if self.message:
+            message = self.message
+        if self.app:
+            app = self.app
+        if self.event:
+            event = self.event
+        if self.host:
+            host = self.host
+        if self.port:
+            port = self.port
+        if self.timeout:
+            timeout = self.timeout
+        
+        if self.icon:
+            icon = self.icon
+        if self.pushbullet_api:
+            pushbullet_api = self.pushbullet_api
+        if self.nmd_api:
+            nmd_api = self.nmd_api
+        
         if growl:
             self.growl(title, app, event, message, host, port, timeout, icon, iconpath)
         if pushbullet:
