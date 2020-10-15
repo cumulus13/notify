@@ -14,10 +14,10 @@ import re
 if sys.platform == 'win32':
     import winsound
 else:
-	if sys.version_info.major == 3:
-	    from . import winsound_linux as winsound
-	else:
-	    import winsound_linux as winsound
+    if sys.version_info.major == 3:
+        from . import winsound_linux as winsound
+    else:
+        import winsound_linux as winsound
 from datetime import datetime
 import socket
 
@@ -72,7 +72,6 @@ class notify(object):
                     self.pushbullet(title, message)                    
         
     def growl(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None):
-        
         if not title:
             title = self.title
         if not app:
@@ -103,7 +102,7 @@ class notify(object):
             timeout = self.timeout
         if not icon:
             icon = self.icon
-        
+
         if isinstance(host, str) and "," in host:
             host_ = re.split(",", host)
             host = []
@@ -115,11 +114,11 @@ class notify(object):
             port = 23053
         if not timeout:
             timeout = 20
-                
+        
         if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1":
             growl = sendgrowl.growl()
             error = False
-                
+
             if isinstance(host, list):
                 for i in host:
                     try:
@@ -143,9 +142,9 @@ class notify(object):
                 print("ERROR:", True)
                 return False
         else:
-            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl not actieve', 'lightred', 'lightyellow'))
+            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl not active', 'lightred', 'lightyellow'))
             return False            
-            
+
     def pushbullet(self, title = None, message = None, api = None, debugx = True):
         if not api:
             api = self.pushbullet_api
@@ -177,7 +176,7 @@ class notify(object):
         else:
             print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet not actieve', 'lightred', 'lightyellow'))
             return False            
-    
+
     def nmd(self, title = None, message = None, api = None, timeout = 3, debugx = True):
         import warnings
         warnings.filterwarnings("ignore")
@@ -210,7 +209,7 @@ class notify(object):
                     a = requests.post(url, data = data, timeout = timeout, verify = False)
                     return a
                 except:
-                    traceback.format_exc()
+                    #traceback.format_exc()
                     if os.getenv('DEBUG'):
                         print(make_colors("ERROR [NMD]:", 'lightwhite', 'lightred', 'blink'))
                         print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
@@ -218,9 +217,10 @@ class notify(object):
                         print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
                     return False
         else:
-            print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
+            if os.getenv('DEBUG'):
+                print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
             return False
-        
+
     def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
         if self.title:
             title = self.title
@@ -251,7 +251,7 @@ class notify(object):
         if nmd:
             self.nmd(title, message, nmd_api, debugx = debugx)
         self.client(title, message)
-            
+
     def server(self, host = '0.0.0.0', port = 33000):
         sound = ''
         active_sound = False
@@ -260,7 +260,7 @@ class notify(object):
             sound = os.path.join(os.path.dirname(__file__), 'sound.wav')
             if not os.path.isfile(sound):
                 sound = self.conf.get_config('sound', 'file')
-        
+
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.bind((host, port))
@@ -271,7 +271,7 @@ class notify(object):
                     #s.listen(8096) #TCP
                     #conn, addr = s.accept() #TCP
                     data, addr = s.recvfrom(8096)
-                    
+
                     if data:
                         #data = conn.recv(8096) #TCP
                         title = ''
@@ -283,7 +283,7 @@ class notify(object):
                         if data_message:
                             message = data_message[0].strip()
                         date = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S%f')
-                        
+
                         if title and message:
                             print(make_colors(date, 'lightyellow') + " - " + make_colors("title =>", 'black', 'lightgreen') + " " + make_colors(str(title), 'lightgreen') + " " + make_colors("message =>", 'lightwhite', 'lightblue') + " " + make_colors(message, 'lightblue'))
                             if active_sound and sound:
@@ -295,14 +295,14 @@ class notify(object):
                         #print("data =", data)
                         #print("title =", title)
                         #print("message =", message)
-                        
+
                 except:
                     traceback.format_exc()
                     sys.exit()
         except:
             traceback.format_exc()
             sys.exit()
-        
+
     def client(self, title, message, host = '127.0.0.1', port = 33000):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
@@ -312,11 +312,11 @@ class notify(object):
         if sys.version_info.major == 3:
             data = bytes(data.encode('utf-8'))
         s.sendto(data, (host, port))
-        
+
     def test(self):
         #def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True):
         self.notify()
-    
+
     def usage(self):
         parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter)
         parser.add_argument('-g', '--growl', action = 'store_true', help = 'Active Growl')
@@ -334,16 +334,16 @@ class notify(object):
         parser.add_argument('MESSAGE', action = 'store', help = 'Message')
         parser.add_argument('-s', '--server', action = 'store_true', help = 'start server')
         parser.add_argument('-c', '--client', action = 'store_true', help = 'start test client')
-        
+
         if len(sys.argv) == 1:
             parser.print_help()
-            
+
         else:
             if '-s' in sys.argv[1:]:
                 self.server()
             else:
                 args = parser.parse_args()
-                
+
                 if args.growl:
                     self.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.host, args.port, args.timeout, args.icon)
                 elif args.pushbullet:
@@ -358,8 +358,8 @@ class notify(object):
                 if args.client:
                     self.client('this is title', 'this is message !')
                 #self.client(args.TITLE, args.MESSAGE)
-                
-                
+
+
 if __name__ == '__main__':
     c = notify()
     c.usage()
