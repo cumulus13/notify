@@ -46,7 +46,7 @@ setup(
     ],
     entry_points = {
          "console_scripts": [
-             "xnotify = xnotify.xnotify:usage",
+             "xnotify = xnotify:usage",
          ]
     },
     data_files=['__version__.py'],

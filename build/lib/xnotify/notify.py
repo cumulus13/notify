@@ -359,9 +359,11 @@ class notify(object):
                     self.client('this is title', 'this is message !')
                 #self.client(args.TITLE, args.MESSAGE)
 
-
-if __name__ == '__main__':
+def usage():
     c = notify()
     c.usage()
+
+if __name__ == '__main__':
+    usage()
     #c.server()
     #c.test_client()
