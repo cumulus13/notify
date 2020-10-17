@@ -42,7 +42,8 @@ setup(
         'configparser',
         'sendgrowl',
         'pydebugger',
-        'pushbullet_py'
+        'pushbullet_py',
+        'playsound'
     ],
     entry_points = {
          "console_scripts": [
