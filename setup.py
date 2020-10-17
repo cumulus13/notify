@@ -42,7 +42,7 @@ setup(
         'configparser',
         'sendgrowl',
         'pydebugger',
-        ''
+        'pushbullet_py'
     ],
     entry_points = {
          "console_scripts": [
