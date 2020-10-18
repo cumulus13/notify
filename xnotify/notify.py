@@ -159,7 +159,7 @@ class notify(object):
         if not message:
             message = self.conf.get_config('pushbullet', 'message')
         if not api:
-            if debugx:
+            if os.getenv('DEBUG') == '1':
                 print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
             return False
         if self.active_pushbullet or self.conf.get_config('service', 'pushbullet', value = 0) == "1":
@@ -168,10 +168,11 @@ class notify(object):
                 pb.push_note(title, message)
                 return True
             except:
-                if os.getenv('DEBUG'):
+                if os.getenv('DEBUG') == '1':
                     print(make_colors("ERROR [PUSHBULLET]:", 'lightwhite', 'lightred', 'blink'))
                     print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
-                print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
+                if os.getenv('DEBUG') == '1':
+                    print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
                 return False
         else:
             print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet not actieve', 'lightred', 'lightyellow'))
@@ -194,7 +195,8 @@ class notify(object):
         if not message:
             message = self.conf.get_config('nmd', 'message')
         if not api:
-            print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
+            if os.getenv('DEBUG') == '1':
+                print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
         debug(api = api)
         debug(title = title)
         debug(message = message)
@@ -210,14 +212,14 @@ class notify(object):
                     return a
                 except:
                     #traceback.format_exc()
-                    if os.getenv('DEBUG'):
+                    if os.getenv('DEBUG') == '1':
                         print(make_colors("ERROR [NMD]:", 'lightwhite', 'lightred', 'blink'))
                         print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
-                    if debugx:
+                    if os.getenv('DEBUG') == '1':
                         print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
                     return False
         else:
-            if os.getenv('DEBUG'):
+            if os.getenv('DEBUG') == '1':
                 print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
             return False
 
