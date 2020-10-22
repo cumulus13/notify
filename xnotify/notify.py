@@ -142,7 +142,7 @@ class notify(object):
                 print("ERROR:", True)
                 return False
         else:
-            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl not active', 'lightred', 'lightyellow'))
+            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
     def pushbullet(self, title = None, message = None, api = None, debugx = True):
