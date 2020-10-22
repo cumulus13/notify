@@ -115,7 +115,7 @@ class notify(object):
         if not timeout:
             timeout = 20
         
-        if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1":
+        if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1':
             growl = sendgrowl.growl()
             error = False
 
@@ -142,7 +142,7 @@ class notify(object):
                 print("ERROR:", True)
                 return False
         else:
-            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 to activate !', 'lightred', 'lightyellow'))
+            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 or set TRACEBACK_GROWL=1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
     def pushbullet(self, title = None, message = None, api = None, debugx = True):
@@ -162,7 +162,7 @@ class notify(object):
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
             return False
-        if self.active_pushbullet or self.conf.get_config('service', 'pushbullet', value = 0) == "1":
+        if self.active_pushbullet or self.conf.get_config('service', 'pushbullet', value = 0) == "1" or os.getenv('TRACEBACK_PUSHBULLET') == '1':
             try:
                 pb = PB.Pushbullet(api)
                 pb.push_note(title, message)
@@ -175,7 +175,7 @@ class notify(object):
                     print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('sending error', 'lightred', 'lightwhite'))
                 return False
         else:
-            print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet not actieve', 'lightred', 'lightyellow'))
+            print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet is set True but not active, please change config file to true or 1 or set TRACEBACK_PUSHBULLET=1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
     def nmd(self, title = None, message = None, api = None, timeout = 3, debugx = True):
@@ -202,7 +202,7 @@ class notify(object):
         debug(message = message)
         data = {"ApiKey": api, "PushTitle": title,"PushText": message}
         debug(data = data)
-        if self.active_nmd or self.conf.get_config('service', 'nmd', value = 0) == "1":
+        if self.active_nmd or self.conf.get_config('service', 'nmd', value = 0) == "1" or os.getenv('TRACEBACK_NMD') == '1':
             try:
                 a = requests.post(url, data = data, timeout = timeout)
                 return a
@@ -220,7 +220,7 @@ class notify(object):
                     return False
         else:
             if os.getenv('DEBUG') == '1':
-                print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD not actieve', 'lightred', 'lightyellow'))
+                print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD is set True but not active, please change config file to true or 1 or set TRACEBACK_NMD=1 to activate !', 'lightred', 'lightyellow'))
             return False
 
     def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
