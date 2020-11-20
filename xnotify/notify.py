@@ -22,6 +22,26 @@ from datetime import datetime
 import socket
 
 class notify(object):
+
+    title = "xnotify"
+    app = "xnotify"
+    event = "xnotify"
+    message = "xnotify"
+    host = "127.0.0.1"
+    port = 23053
+    timeout = 10
+    icon = None
+    active_growl = False
+    active_pushbullet = False
+    active_nmd = False
+    pushbullet_api = False
+    nmd_api = False
+
+    configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
+    if os.path.isfile('notify.ini'):
+        configname = 'notify.ini'
+    conf = configset(configname)
+
     def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False):
         super(notify, self)
         self.title = title
@@ -70,38 +90,39 @@ class notify(object):
                     self.nmd(title, message)
                 if active_pushbullet:
                     self.pushbullet(title, message)                    
-        
-    def growl(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None):
+    
+    @classmethod
+    def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None):
         if not title:
-            title = self.title
+            title = cls.title
         if not app:
-            app = self.app
+            app = cls.app
         if not event:
-            event = self.event
+            event = cls.event
         if not message:
-            message = self.message
+            message = cls.message
         if not host:
-            host = self.host
+            host = cls.host
         if not port:
-            port = self.port
+            port = cls.port
         if not title:
-            title = self.conf.get_config('growl', 'title')
+            title = cls.conf.get_config('growl', 'title')
         if not app:
-            app = self.conf.get_config('growl', 'app')
+            app = cls.conf.get_config('growl', 'app')
         if not event:
-            event = self.conf.get_config('growl', 'event')
+            event = cls.conf.get_config('growl', 'event')
         if not message:
-            message = self.conf.get_config('growl', 'message')
+            message = cls.conf.get_config('growl', 'message')
         if not host:
-            host = self.conf.get_config('growl', 'host')
+            host = cls.conf.get_config('growl', 'host')
         if not port:
-            port = self.conf.get_config('growl', 'port')
+            port = cls.conf.get_config('growl', 'port')
             if port:
                 port = int(port)
         if not timeout:
-            timeout = self.timeout
+            timeout = cls.timeout
         if not icon:
-            icon = self.icon
+            icon = cls.icon
 
         if isinstance(host, str) and "," in host:
             host_ = re.split(",", host)
@@ -115,7 +136,7 @@ class notify(object):
         if not timeout:
             timeout = 20
         
-        if self.active_growl or self.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1':
+        if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
             growl = sendgrowl.growl()
             error = False
 
@@ -145,24 +166,25 @@ class notify(object):
             print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 or set TRACEBACK_GROWL=1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
-    def pushbullet(self, title = None, message = None, api = None, debugx = True):
+    @classmethod
+    def pushbullet(cls, title = None, message = None, api = None, debugx = True):
         if not api:
-            api = self.pushbullet_api
+            api = cls.pushbullet_api
         if not api:
-            api = self.conf.get_config('pushbullet', 'api')
+            api = cls.conf.get_config('pushbullet', 'api')
         if not title:
-            title = self.title
+            title = cls.title
         if not title:
-            title = self.conf.get_config('pushbullet', 'title')
+            title = cls.conf.get_config('pushbullet', 'title')
         if not message:
-            message = self.message
+            message = cls.message
         if not message:
-            message = self.conf.get_config('pushbullet', 'message')
+            message = cls.conf.get_config('pushbullet', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
             return False
-        if self.active_pushbullet or self.conf.get_config('service', 'pushbullet', value = 0) == "1" or os.getenv('TRACEBACK_PUSHBULLET') == '1':
+        if cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == 1 or cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == "1" or os.getenv('TRACEBACK_PUSHBULLET') == '1':
             try:
                 pb = PB.Pushbullet(api)
                 pb.push_note(title, message)
@@ -178,22 +200,23 @@ class notify(object):
             print(make_colors("[PUSHBULLET]", 'lightwhite', 'lightred') + " " + make_colors('warning: Pushbullet is set True but not active, please change config file to true or 1 or set TRACEBACK_PUSHBULLET=1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
-    def nmd(self, title = None, message = None, api = None, timeout = 3, debugx = True):
+    @classmethod
+    def nmd(cls, title = None, message = None, api = None, timeout = 3, debugx = True):
         import warnings
         warnings.filterwarnings("ignore")
         url = "https://www.notifymydevice.com/push"#?ApiKey={0}&PushTitle={1}&PushText={2}"
         if not api:
-            api = self.nmd_api
+            api = cls.nmd_api
         if not api:
-            api = self.conf.get_config('nmd', 'api')
+            api = cls.conf.get_config('nmd', 'api')
         if not title:
-            title = self.title
+            title = cls.title
         if not title:
-            title = self.conf.get_config('nmd', 'title')
+            title = cls.conf.get_config('nmd', 'title')
         if not message:
-            message = self.message
+            message = cls.message
         if not message:
-            message = self.conf.get_config('nmd', 'message')
+            message = cls.conf.get_config('nmd', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
@@ -202,7 +225,7 @@ class notify(object):
         debug(message = message)
         data = {"ApiKey": api, "PushTitle": title,"PushText": message}
         debug(data = data)
-        if self.active_nmd or self.conf.get_config('service', 'nmd', value = 0) == "1" or os.getenv('TRACEBACK_NMD') == '1':
+        if cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == 1 or cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == "1" or os.getenv('TRACEBACK_NMD') == '1':
             try:
                 a = requests.post(url, data = data, timeout = timeout)
                 return a
@@ -223,45 +246,68 @@ class notify(object):
                 print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('warning: NMD is set True but not active, please change config file to true or 1 or set TRACEBACK_NMD=1 to activate !', 'lightred', 'lightyellow'))
             return False
 
-    def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
-        if self.title:
-            title = self.title
-        if self.message:
-            message = self.message
-        if self.app:
-            app = self.app
-        if self.event:
-            event = self.event
-        if self.host:
-            host = self.host
-        if self.port:
-            port = self.port
-        if self.timeout:
-            timeout = self.timeout
+    @classmethod
+    def notify(cls, *args, **kwargs):
+        return cls.send(*args, **kwargs)
+
+    @classmethod
+    def show_config(cls):
+        all_config = cls.conf.read_all_config()
+        return all_config
+
+    @classmethod
+    def get_config(cls, *args, **kwargs):
+        return cls.conf.get_config(*args, **kwargs)
+
+    @classmethod
+    def read_config(cls, *args, **kwargs):
+        return cls.conf.read_config(*args, **kwargs)
+
+    @classmethod
+    def write_config(cls, *args, **kwargs):
+        return cls.conf.write_config(*args, **kwargs)
+
+    @classmethod
+    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
+        if cls.title and not title:
+            title = cls.title
+        if cls.message and not message:
+            message = cls.message
+        if cls.app and not app:
+            app = cls.app
+        if cls.event and not event:
+            event = cls.event
+        if cls.host and not host:
+            host = cls.host
+        if cls.port and not port:
+            port = cls.port
+        if cls.timeout and not timeout:
+            timeout = cls.timeout
         
-        if self.icon:
-            icon = self.icon
-        if self.pushbullet_api:
-            pushbullet_api = self.pushbullet_api
-        if self.nmd_api:
-            nmd_api = self.nmd_api
+        if cls.icon and not icon:
+            icon = cls.icon
+        if cls.pushbullet_api and not pushbullet_api:
+            pushbullet_api = cls.pushbullet_api
+        if cls.nmd_api and not nmd_api:
+            nmd_api = cls.nmd_api
         
         if growl:
-            self.growl(title, app, event, message, host, port, timeout, icon, iconpath)
+            cls.growl(title, app, event, message, host, port, timeout, icon, iconpath)
         if pushbullet:
-            self.pushbullet(title, message, pushbullet_api, debugx)
+            cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd:
-            self.nmd(title, message, nmd_api, debugx = debugx)
-        self.client(title, message)
+            cls.nmd(title, message, nmd_api, debugx = debugx)
+        cls.client(title, message)
 
-    def server(self, host = '0.0.0.0', port = 33000):
+    @classmethod
+    def server(cls, host = '0.0.0.0', port = 33000):
         sound = ''
         active_sound = False
-        if self.conf.get_config('sound', 'active', '1') == 1:
+        if cls.conf.get_config('sound', 'active', '1') == 1:
             active_sound = True
             sound = os.path.join(os.path.dirname(__file__), 'sound.wav')
             if not os.path.isfile(sound):
-                sound = self.conf.get_config('sound', 'file')
+                sound = cls.conf.get_config('sound', 'file')
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -305,7 +351,8 @@ class notify(object):
             traceback.format_exc()
             sys.exit()
 
-    def client(self, title, message, host = '127.0.0.1', port = 33000):
+    @classmethod
+    def client(cls, title, message, host = '127.0.0.1', port = 33000):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
             data = "title: {0} message: {1}".format(title, message)
@@ -315,11 +362,11 @@ class notify(object):
             data = bytes(data.encode('utf-8'))
         s.sendto(data, (host, port))
 
-    def test(self):
+    def test(cls):
         #def notify(self, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True):
-        self.notify()
+        cls.notify()
 
-    def usage(self):
+    def usage(cls):
         parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter)
         parser.add_argument('-g', '--growl', action = 'store_true', help = 'Active Growl')
         parser.add_argument('-p', '--pushbullet', action = 'store_true', help = 'Active Pushbullet')
@@ -342,23 +389,23 @@ class notify(object):
 
         else:
             if '-s' in sys.argv[1:]:
-                self.server()
+                cls.server()
             else:
                 args = parser.parse_args()
 
                 if args.growl:
-                    self.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.host, args.port, args.timeout, args.icon)
+                    cls.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.host, args.port, args.timeout, args.icon)
                 elif args.pushbullet:
-                    #print("type =", type(self.pushbullet))
-                    self.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
+                    #print("type =", type(cls.pushbullet))
+                    cls.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
                 elif args.nmd:
-                    self.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
+                    cls.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
                 else:
-                    self.notify(args.TITLE, args.MESSAGE, args.app, args.event, args.host, args.port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api)
+                    cls.notify(args.TITLE, args.MESSAGE, args.app, args.event, args.host, args.port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api)
                 if args.server:
-                    self.server()
+                    cls.server()
                 if args.client:
-                    self.client('this is title', 'this is message !')
+                    cls.client('this is title', 'this is message !')
                 #self.client(args.TITLE, args.MESSAGE)
 
 def usage():
