@@ -42,7 +42,7 @@ class notify(object):
         configname = 'notify.ini'
     conf = configset(configname)
 
-    def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False):
+    def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None):
         super(notify, self)
         self.title = title
         self.app = app
@@ -57,6 +57,7 @@ class notify(object):
         self.active_nmd = active_nmd
         self.pushbullet_api = pushbullet_api
         self.nmd_api = nmd_api
+        self.gntp_callback = gntp_callback
         
         self.configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
         if os.path.isfile('notify.ini'):
@@ -90,9 +91,19 @@ class notify(object):
                     self.nmd(title, message)
                 if active_pushbullet:
                     self.pushbullet(title, message)                    
-    
+
     @classmethod
-    def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None):
+    def register(self, app, event, iconpath, timeout=20):
+        sendgrowl.growl().register(app, event, iconpath, timeout)
+        
+    @classmethod
+    def set_config(cls, configfile):
+        if os.path.isfile(configfile):
+            cls.conf = configset(configfile)
+            return cls.conf
+            
+    @classmethod
+    def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None, gntp_callback = None):
         if not title:
             title = cls.title
         if not app:
@@ -135,7 +146,7 @@ class notify(object):
             port = 23053
         if not timeout:
             timeout = 20
-        
+        debug(is_growl_active = cls.conf.get_config('service', 'growl'))
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
             growl = sendgrowl.growl()
             error = False
@@ -143,18 +154,20 @@ class notify(object):
             if isinstance(host, list):
                 for i in host:
                     try:
-                        growl.publish(app, event, title, message, i, port, timeout, icon, iconpath)
+                        growl.publish(app, event, title, message, i, port, timeout, icon, iconpath, gntp_callback)
                         return True
                     except:
+                        traceback.format_exc()
                         if os.getenv('DEBUG'):
                             print(make_colors("ERROR [GROWL]:", 'lightwhite', 'lightred', 'blink'))
                             print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
                             error = True
             else:
                 try:
-                    growl.publish(app, event, title, message, host, port, timeout, icon, iconpath)
+                    growl.publish(app, event, title, message, host, port, timeout, icon, iconpath, gntp_callback)
                     return True
                 except:
+                    traceback.format_exc()
                     if os.getenv('DEBUG'):
                         print(make_colors("ERROR [GROWL]:", 'lightwhite', 'lightred', 'blink'))
                         print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
@@ -268,7 +281,7 @@ class notify(object):
         return cls.conf.write_config(*args, **kwargs)
 
     @classmethod
-    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None):
+    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None, gntp_callback = None):
         if cls.title and not title:
             title = cls.title
         if cls.message and not message:
@@ -292,7 +305,7 @@ class notify(object):
             nmd_api = cls.nmd_api
         
         if growl:
-            cls.growl(title, app, event, message, host, port, timeout, icon, iconpath)
+            cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
         if pushbullet:
             cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd:
