@@ -304,11 +304,11 @@ class notify(object):
         if cls.nmd_api and not nmd_api:
             nmd_api = cls.nmd_api
         
-        if growl:
+        if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
-        if pushbullet:
+        if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
             cls.pushbullet(title, message, pushbullet_api, debugx)
-        if nmd:
+        if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
             cls.nmd(title, message, nmd_api, debugx = debugx)
         cls.client(title, message)
 
