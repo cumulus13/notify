@@ -281,7 +281,7 @@ class notify(object):
         return cls.conf.write_config(*args, **kwargs)
 
     @classmethod
-    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = True, nmd = True, debugx = True, iconpath=None, gntp_callback = None):
+    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, debugx = True, iconpath=None, gntp_callback = None):
         if cls.title and not title:
             title = cls.title
         if cls.message and not message:
