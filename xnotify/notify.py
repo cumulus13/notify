@@ -20,6 +20,8 @@ else:
         import winsound_linux as winsound
 from datetime import datetime
 import socket
+from . import __version__
+version = __version__.version
 
 class notify(object):
 
@@ -306,8 +308,9 @@ class notify(object):
         
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
-        if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
-            cls.pushbullet(title, message, pushbullet_api, debugx)
+        if cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
+            if not pushbullet == False:
+                cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
             cls.nmd(title, message, nmd_api, debugx = debugx)
         cls.client(title, message)
