@@ -309,10 +309,14 @@ class notify(object):
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
         if cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
-            if not pushbullet == False:
+            debug(pushbullet = pushbullet)
+            if not pushbullet == False and not os.getenv("PUSHBULLET") == '0' and not os.getenv("DISABLE_PUSHBULLET") == '1':
+                print("run pushbullet")
                 cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
-            cls.nmd(title, message, nmd_api, debugx = debugx)
+            if not os.getenv("NMD") == '0':
+                print("run nmd")
+                cls.nmd(title, message, nmd_api, debugx = debugx)
         cls.client(title, message)
 
     @classmethod
