@@ -43,8 +43,6 @@ class notify(object):
     nmd_api = False
 
     configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
-    #if os.path.isfile('notify.ini'):
-        #configname = 'notify.ini'
     debug(configname = configname, debug = True)
     conf = configset(configname)
 
@@ -171,18 +169,9 @@ class notify(object):
 
     @classmethod
     def pushbullet(cls, title = None, message = None, api = None, debugx = True):
-        if not api:
-            api = cls.pushbullet_api
-        if not api:
-            api = cls.conf.get_config('pushbullet', 'api')
-        if not title:
-            title = cls.title
-        if not title:
-            title = cls.conf.get_config('pushbullet', 'title')
-        if not message:
-            message = cls.message
-        if not message:
-            message = cls.conf.get_config('pushbullet', 'message')
+        api = cls.pushbullet_api or cls.conf.get_config('pushbullet', 'api')
+        title = cls.title or cls.conf.get_config('pushbullet', 'title')
+        message = cls.message or cls.conf.get_config('pushbullet', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
@@ -208,21 +197,13 @@ class notify(object):
         import warnings
         warnings.filterwarnings("ignore")
         url = "https://www.notifymydevice.com/push"#?ApiKey={0}&PushTitle={1}&PushText={2}"
-        if not api:
-            api = cls.nmd_api
-        if not api:
-            api = cls.conf.get_config('nmd', 'api')
-        if not title:
-            title = cls.title
-        if not title:
-            title = cls.conf.get_config('nmd', 'title')
-        if not message:
-            message = cls.message
-        if not message:
-            message = cls.conf.get_config('nmd', 'message')
+        api = cls.nmd_api or cls.conf.get_config('nmd', 'api')
+        title = cls.title or cls.conf.get_config('nmd', 'title')
+        message = cls.message or cls.conf.get_config('nmd', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
+            return False
         debug(api = api)
         debug(title = title)
         debug(message = message)
@@ -335,14 +316,6 @@ class notify(object):
                             print(make_colors(date, 'lightyellow') + " - " + make_colors("title =>", 'black', 'lightgreen') + " " + make_colors(str(title), 'lightgreen') + " " + make_colors("message =>", 'lightwhite', 'lightblue') + " " + make_colors(message, 'lightblue'))
                             if active_sound and sound:
                                 winsound.PlaySound(sound, winsound.SND_ALIAS)
-                            #try:
-                                #self.notify(title, message, "Notify", "Receive", debugx = False)
-                            #except:
-                                #pass
-                        #print("data =", data)
-                        #print("title =", title)
-                        #print("message =", message)
-
                 except:
                     traceback.format_exc()
                     sys.exit()
