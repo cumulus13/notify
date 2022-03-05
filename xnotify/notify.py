@@ -20,7 +20,10 @@ else:
         import winsound_linux as winsound
 from datetime import datetime
 import socket
-from . import __version__
+try:
+    from . import __version__
+except:
+    import __version__
 version = __version__.version
 
 class notify(object):
@@ -40,8 +43,9 @@ class notify(object):
     nmd_api = False
 
     configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
-    if os.path.isfile('notify.ini'):
-        configname = 'notify.ini'
+    #if os.path.isfile('notify.ini'):
+        #configname = 'notify.ini'
+    debug(configname = configname, debug = True)
     conf = configset(configname)
 
     def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None):
@@ -106,49 +110,33 @@ class notify(object):
             
     @classmethod
     def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None, gntp_callback = None):
-        if not title:
-            title = cls.title
-        if not app:
-            app = cls.app
-        if not event:
-            event = cls.event
-        if not message:
-            message = cls.message
-        if not host:
-            host = cls.host
-        if not port:
-            port = cls.port
-        if not title:
-            title = cls.conf.get_config('growl', 'title')
-        if not app:
-            app = cls.conf.get_config('growl', 'app')
-        if not event:
-            event = cls.conf.get_config('growl', 'event')
-        if not message:
-            message = cls.conf.get_config('growl', 'message')
-        if not host:
-            host = cls.conf.get_config('growl', 'host')
+        if not title: title = cls.title
+        if not app: app = cls.app
+        if not event: event = cls.event
+        if not message: message = cls.message
+        if not host: host = cls.host
+        if not port: port = cls.port
+        if not title: title = cls.conf.get_config('growl', 'title')
+        if not app: app = cls.conf.get_config('growl', 'app')
+        if not event: event = cls.conf.get_config('growl', 'event')
+        if not message: message = cls.conf.get_config('growl', 'message')
+        if not host: host = cls.conf.get_config('growl', 'host')
         if not port:
             port = cls.conf.get_config('growl', 'port')
             if port:
                 port = int(port)
-        if not timeout:
-            timeout = cls.timeout
-        if not icon:
-            icon = cls.icon
+        if not timeout: timeout = cls.timeout
+        if not icon: icon = cls.icon
 
         if isinstance(host, str) and "," in host:
             host_ = re.split(",", host)
             host = []
             for i in host_:
                 host.append(i.strip())
-        if not host:
-            host = '127.0.0.1'
-        if not port:
-            port = 23053
-        if not timeout:
-            timeout = 20
-        debug(is_growl_active = cls.conf.get_config('service', 'growl'))
+        if not host: host = '127.0.0.1'
+        if not port: port = 23053
+        if not timeout: timeout = 20
+        debug(is_growl_active = cls.conf.get_config('service', 'growl'), debug = True)
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
             growl = sendgrowl.growl()
             error = False
@@ -284,39 +272,30 @@ class notify(object):
 
     @classmethod
     def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, debugx = True, iconpath=None, gntp_callback = None):
-        if cls.title and not title:
-            title = cls.title
-        if cls.message and not message:
-            message = cls.message
-        if cls.app and not app:
-            app = cls.app
-        if cls.event and not event:
-            event = cls.event
-        if cls.host and not host:
-            host = cls.host
-        if cls.port and not port:
-            port = cls.port
-        if cls.timeout and not timeout:
-            timeout = cls.timeout
+        title = cls.title or title
+        message = cls.message or message
+        app = cls.app or app
+        event = cls.event or event
+        host = cls.host or host
+        port = cls.port or port
+        timeout = cls.timeout or timeout
         
-        if cls.icon and not icon:
-            icon = cls.icon
-        if cls.pushbullet_api and not pushbullet_api:
-            pushbullet_api = cls.pushbullet_api
-        if cls.nmd_api and not nmd_api:
-            nmd_api = cls.nmd_api
+        icon = cls.icon or icon
+        pushbullet_api = cls.pushbullet_api or pushbullet_api
+        nmd_api = cls.nmd_api or nmd_api
         
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
         if cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
             debug(pushbullet = pushbullet)
-            if not pushbullet == False and not os.getenv("PUSHBULLET") == '0' and not os.getenv("DISABLE_PUSHBULLET") == '1':
+            #if not pushbullet == False and not os.getenv("PUSHBULLET") == '0' and not os.getenv("DISABLE_PUSHBULLET") == '1':
+            if not os.getenv("DISABLE_PUSHBULLET") == '1':
                 print("run pushbullet")
                 cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
-            if not os.getenv("NMD") == '0':
-                print("run nmd")
-                cls.nmd(title, message, nmd_api, debugx = debugx)
+            #if not os.getenv("NMD") == '0':
+            print("run nmd")
+            cls.nmd(title, message, nmd_api, debugx = debugx)
         cls.client(title, message)
 
     @classmethod
