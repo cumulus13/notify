@@ -20,8 +20,7 @@ else:
         import winsound_linux as winsound
 from datetime import datetime
 import socket
-from . import __version__
-version = __version__.version
+from gntplib import Publisher, Resource
 
 class notify(object):
 
@@ -42,7 +41,15 @@ class notify(object):
     configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
     if os.path.isfile('notify.ini'):
         configname = 'notify.ini'
-    conf = configset(configname)
+    try:
+        conf = configset(configname)
+    except:
+        #from importlib import util
+        #spec = util.spec_from_file_location("configset", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "configset\\configset.py"))
+        #configset = util.module_from_spec(spec)
+        #sys.modules['configset'] = configset
+        #spec.loader.exec_module(configset)
+        conf = configset.configset(configname)
 
     def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None):
         super(notify, self)
@@ -64,7 +71,16 @@ class notify(object):
         self.configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
         if os.path.isfile('notify.ini'):
             self.configname = 'notify.ini'
-        self.conf = configset(self.configname)
+        
+        try:
+            self.conf = configset(self.configname)
+        except:                
+            from importlib import util
+            spec = util.spec_from_file_location("configset", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "configset\\configset.py"))
+            configset = util.module_from_spec(spec)
+            sys.modules['configset'] = configset
+            spec.loader.exec_module(configset)
+            self.conf = configset.configset(self.configname)
         
         if not self.active_growl:
             self.active_growl = self.conf.get_config('service', 'growl', value = '0')
@@ -96,7 +112,12 @@ class notify(object):
 
     @classmethod
     def register(self, app, event, iconpath, timeout=20):
-        sendgrowl.growl().register(app, event, iconpath, timeout)
+        debug(app = app)
+        debug(event = event)
+        debug(iconpath = iconpath)
+        debug(timeout = timeout)
+        
+        sendgrowl.growl(app, event, iconpath, timeout = timeout).register()
         
     @classmethod
     def set_config(cls, configfile):
@@ -134,9 +155,19 @@ class notify(object):
                 port = int(port)
         if not timeout:
             timeout = cls.timeout
-        if not icon:
-            icon = cls.icon
-
+        debug(icon = icon)
+        if not icon: icon = cls.icon or cls.conf.get_config('growl', 'icon')
+        debug(icon = icon)
+        if iconpath and not icon:
+            icon = iconpath
+        if icon:
+            if not os.path.isfile(icon): icon = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.basename(icon))
+        else:
+            icon = cls.conf.get_config('growl', 'icon')
+        icon = os.path.realpath(icon)
+        debug(icon = icon)
+        if os.path.isfile(icon):
+            iconpath = icon
         if isinstance(host, str) and "," in host:
             host_ = re.split(",", host)
             host = []
@@ -150,30 +181,24 @@ class notify(object):
             timeout = 20
         debug(is_growl_active = cls.conf.get_config('service', 'growl'))
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
-            growl = sendgrowl.growl()
+            if not isinstance(host, list): host = [host]
+            growl = sendgrowl.growl(app, event, icon)
             error = False
-
-            if isinstance(host, list):
-                for i in host:
-                    try:
-                        growl.publish(app, event, title, message, i, port, timeout, icon, iconpath, gntp_callback)
-                        return True
-                    except:
-                        traceback.format_exc()
-                        if os.getenv('DEBUG'):
-                            print(make_colors("ERROR [GROWL]:", 'lightwhite', 'lightred', 'blink'))
-                            print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
-                            error = True
-            else:
-                try:
-                    growl.publish(app, event, title, message, host, port, timeout, icon, iconpath, gntp_callback)
-                    return True
-                except:
-                    traceback.format_exc()
-                    if os.getenv('DEBUG'):
-                        print(make_colors("ERROR [GROWL]:", 'lightwhite', 'lightred', 'blink'))
-                        print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
-                    return False
+            debug(event = event)
+            debug(title = title)
+            debug(message = message)
+            debug(icon = icon)
+            debug(iconpath = iconpath)
+            debug(host = host)
+            debug(timeout = timeout)
+            debug(gntp_callback = gntp_callback)
+            
+            try:
+                growl.Publish(event, title, message, host = host, port = port, timeout = timeout, icon = icon, iconpath = iconpath, gntp_callback = gntp_callback)
+            except:
+                print(traceback.format_exc())
+                error = True
+            
             if error:
                 print("ERROR:", True)
                 return False
@@ -284,6 +309,7 @@ class notify(object):
 
     @classmethod
     def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, debugx = True, iconpath=None, gntp_callback = None):
+        
         if cls.title and not title:
             title = cls.title
         if cls.message and not message:
@@ -308,15 +334,10 @@ class notify(object):
         
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
-        if cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
-            debug(pushbullet = pushbullet)
-            if not pushbullet == False and not os.getenv("PUSHBULLET") == '0' and not os.getenv("DISABLE_PUSHBULLET") == '1':
-                print("run pushbullet")
-                cls.pushbullet(title, message, pushbullet_api, debugx)
+        if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
+            cls.pushbullet(title, message, pushbullet_api, debugx)
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
-            if not os.getenv("NMD") == '0':
-                print("run nmd")
-                cls.nmd(title, message, nmd_api, debugx = debugx)
+            cls.nmd(title, message, nmd_api, debugx = debugx)
         cls.client(title, message)
 
     @classmethod
@@ -396,7 +417,7 @@ class notify(object):
         parser.add_argument('-a', '--app', action = 'store', help = 'App Name for Growl')
         parser.add_argument('-e', '--event', action = 'store', help = 'Event Name for Growl')
         parser.add_argument('-i', '--icon', action = 'store', help = 'Icon Path for Growl')
-        parser.add_argument('-H', '--host', action = 'store', help = 'Host for Growl and Snarl')
+        parser.add_argument('-H', '--host', action = 'store', help = 'Host for Growl and Snarl', nargs = '*')
         parser.add_argument('-P', '--port', action = 'store', help = 'Port for Growl and Snarl')
         parser.add_argument('-t', '--timeout', action = 'store', help = 'Timeout for Growl and Snarl')
         parser.add_argument('TITLE', action = 'store', help = 'Title of Message')
