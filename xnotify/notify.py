@@ -75,11 +75,11 @@ class notify(object):
         try:
             self.conf = configset(self.configname)
         except:                
-            from importlib import util
-            spec = util.spec_from_file_location("configset", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "configset\\configset.py"))
-            configset = util.module_from_spec(spec)
-            sys.modules['configset'] = configset
-            spec.loader.exec_module(configset)
+            #from importlib import util
+            #spec = util.spec_from_file_location("configset", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "configset\\configset.py"))
+            #configset = util.module_from_spec(spec)
+            #sys.modules['configset'] = configset
+            #spec.loader.exec_module(configset)
             self.conf = configset.configset(self.configname)
         
         if not self.active_growl:
@@ -117,7 +117,8 @@ class notify(object):
         debug(iconpath = iconpath)
         debug(timeout = timeout)
         
-        sendgrowl.growl(app, event, iconpath, timeout = timeout).register()
+        s = sendgrowl.growl(app, event, iconpath, timeout = timeout)
+        s.register()
         
     @classmethod
     def set_config(cls, configfile):
@@ -127,6 +128,7 @@ class notify(object):
             
     @classmethod
     def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None, gntp_callback = None):
+        debug(host = host)
         if not title:
             title = cls.title
         if not app:
@@ -182,7 +184,7 @@ class notify(object):
         debug(is_growl_active = cls.conf.get_config('service', 'growl'))
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
             if not isinstance(host, list): host = [host]
-            growl = sendgrowl.growl(app, event, icon)
+            growl = sendgrowl.Growl(app, event, icon)
             error = False
             debug(event = event)
             debug(title = title)
@@ -192,9 +194,9 @@ class notify(object):
             debug(host = host)
             debug(timeout = timeout)
             debug(gntp_callback = gntp_callback)
-            
+            debug(growl_file = sendgrowl.__file__)
             try:
-                growl.Publish(event, title, message, host = host, port = port, timeout = timeout, icon = icon, iconpath = iconpath, gntp_callback = gntp_callback)
+                growl.Publish(event, title, message, host = host, port = port, timeout = timeout, icon = icon, iconpath = iconpath, gntp_callback = gntp_callback, app = app)
             except:
                 print(traceback.format_exc())
                 error = True
