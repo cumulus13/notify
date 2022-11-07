@@ -123,29 +123,17 @@ class notify(object):
             
     @classmethod
     def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None, gntp_callback = None):
-        debug(host = host)
-        if not title:
-            title = cls.title
-        if not app:
-            app = cls.app
-        if not event:
-            event = cls.event
-        if not message:
-            message = cls.message
-        if not host:
-            host = cls.host
-        if not port:
-            port = cls.port
-        if not title:
-            title = cls.conf.get_config('growl', 'title')
-        if not app:
-            app = cls.conf.get_config('growl', 'app')
-        if not event:
-            event = cls.conf.get_config('growl', 'event')
-        if not message:
-            message = cls.conf.get_config('growl', 'message')
-        if not host:
-            host = cls.conf.get_config('growl', 'host')
+        if not title: title = cls.title
+        if not app: app = cls.app
+        if not event: event = cls.event
+        if not message: message = cls.message
+        if not host: host = cls.host
+        if not port: port = cls.port
+        if not title: title = cls.conf.get_config('growl', 'title')
+        if not app: app = cls.conf.get_config('growl', 'app')
+        if not event: event = cls.conf.get_config('growl', 'event')
+        if not message: message = cls.conf.get_config('growl', 'message')
+        if not host: host = cls.conf.get_config('growl', 'host')
         if not port:
             port = cls.conf.get_config('growl', 'port')
             if port:
