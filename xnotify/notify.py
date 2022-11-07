@@ -14,9 +14,9 @@ import re
 if sys.platform == 'win32':
     import winsound
 else:
-    if sys.version_info.major == 3:
+    try:
         from . import winsound_linux as winsound
-    else:
+    except:
         import winsound_linux as winsound
 from datetime import datetime
 import socket
@@ -44,11 +44,6 @@ class notify(object):
     try:
         conf = configset(configname)
     except:
-        #from importlib import util
-        #spec = util.spec_from_file_location("configset", os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "configset\\configset.py"))
-        #configset = util.module_from_spec(spec)
-        #sys.modules['configset'] = configset
-        #spec.loader.exec_module(configset)
         conf = configset.configset(configname)
 
     def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None):
@@ -166,7 +161,7 @@ class notify(object):
             if not os.path.isfile(icon): icon = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.basename(icon))
         else:
             icon = cls.conf.get_config('growl', 'icon')
-        icon = os.path.realpath(icon)
+        if icon: icon = os.path.realpath(icon)
         debug(icon = icon)
         if os.path.isfile(icon):
             iconpath = icon
@@ -311,7 +306,7 @@ class notify(object):
 
     @classmethod
     def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, debugx = True, iconpath=None, gntp_callback = None):
-        
+        debug(host = host)
         if cls.title and not title:
             title = cls.title
         if cls.message and not message:
@@ -321,7 +316,8 @@ class notify(object):
         if cls.event and not event:
             event = cls.event
         if cls.host and not host:
-            host = cls.host
+            host = cls.conf.get_config_as_list('growl','host') or cls.host
+            debug(host = host)
         if cls.port and not port:
             port = cls.port
         if cls.timeout and not timeout:
@@ -459,3 +455,5 @@ if __name__ == '__main__':
     usage()
     #c.server()
     #c.test_client()
+
+# by LICFACE <licface@yahoo.com>

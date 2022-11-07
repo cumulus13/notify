@@ -97,8 +97,6 @@ setup(
              "xnotify = xnotify:usage",
          ]
     },
-    data_files=['__version__.py'],
-    include_package_data=True,
     python_requires=">=2.7",
     classifiers=[
         'Development Status :: %s' % DEVSTATUS,
