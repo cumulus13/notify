@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 import sys, os
+from pprint import pprint
 import argparse
 from configset import configset
 import pushbullet as PB
@@ -11,6 +12,7 @@ import argparse
 import traceback
 import requests
 import re
+import json
 if sys.platform == 'win32':
     import winsound
 else:
@@ -24,10 +26,10 @@ from gntplib import Publisher, Resource
 
 class notify(object):
 
-    title = "xnotify"
-    app = "xnotify"
-    event = "xnotify"
-    message = "xnotify"
+    title = ""
+    app = ""
+    event = ""
+    message = ""
     host = "127.0.0.1"
     port = 23053
     timeout = 10
@@ -35,8 +37,10 @@ class notify(object):
     active_growl = False
     active_pushbullet = False
     active_nmd = False
+    active_ntfy = False
     pushbullet_api = False
     nmd_api = False
+    gntp_callback = None
 
     configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
     if os.path.isfile('notify.ini'):
@@ -46,26 +50,26 @@ class notify(object):
     except:
         conf = configset.configset(configname)
 
-    def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None):
+    def __init__(self, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, gntp_callback = None, active_ntfy = True):
         super(notify, self)
-        self.title = title
-        self.app = app
-        self.event = event
-        self.message = message
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-        self.icon = None
-        self.active_growl = active_growl
-        self.active_pushbullet = active_pushbullet
-        self.active_nmd = active_nmd
-        self.pushbullet_api = pushbullet_api
-        self.nmd_api = nmd_api
-        self.gntp_callback = gntp_callback
+        self.title = title or self.title
+        self.app = app or self.app
+        self.event = event or self.event
+        self.message = message or self.message
+        self.host = host or self.host
+        self.port = port or self.port
+        self.timeout = timeout or self.timeout
+        self.icon = None or self.icon
+        self.active_growl = active_growl or self.conf.get_config('service', 'growl', '1') or self.active_growl
+        self.active_pushbullet = active_pushbullet or self.conf.get_config('service', 'pushbullet', '1') or self.active_pushbullet
+        self.active_nmd = active_nmd or self.conf.get_config('service', 'nmd', '1') or self.active_nmd
+        self.active_ntfy = active_ntfy or self.active_ntfy
+        self.pushbullet_api = pushbullet_api or self.pushbullet_api or self.conf.get_config('pushbullet', 'api')
+        self.nmd_api = nmd_api or self.nmd_api or self.conf.get_config('nmd', 'api')
+        self.gntp_callback = gntp_callback or self.gntp_callback
         
         self.configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
-        if os.path.isfile('notify.ini'):
-            self.configname = 'notify.ini'
+        if os.path.isfile('notify.ini'): self.configname = 'notify.ini'
         
         try:
             self.conf = configset(self.configname)
@@ -77,36 +81,27 @@ class notify(object):
             #spec.loader.exec_module(configset)
             self.conf = configset.configset(self.configname)
         
-        if not self.active_growl:
-            self.active_growl = self.conf.get_config('service', 'growl', value = '0')
-            if self.active_growl:
-                self.active_growl = int(self.active_growl)
-        if not self.active_pushbullet:
-            self.active_pushbullet = self.conf.get_config('service', 'pushbullet', value = '0')
-            if self.active_pushbullet:
-                self.active_pushbullet = int(self.active_pushbullet)
-        if not self.active_nmd:
-            self.active_nmd = self.conf.get_config('service', 'nmd', value = '0')
-            if self.active_nmd:
-                self.active_nmd = int(self.active_nmd)
-        if direct_run:
-            if active_growl:
-                self.growl(title, app, event, message, host, port, timeout, icon)
-            if active_nmd:
-                self.nmd(title, message)
-            if active_pushbullet:
-                self.pushbullet(title, message)
-        elif self.title and self.event and self.message:
-            self.growl(title, app, event, message, host, port, timeout, icon)
-        else:
-            if self.title and self.message:
-                if active_nmd:
-                    self.nmd(title, message)
-                if active_pushbullet:
-                    self.pushbullet(title, message)                    
+        if self.title and self.message and (self.active_growl or self.active_pushbullet or self.active_nmd or self.active_ntfy):
+            if active_growl: self.growl(title, app, event, message, host, port, timeout, icon)
+            if active_nmd and self.nmd_api: self.nmd(title, message)
+            if active_pushbullet and self.pushbullet_api: self.pushbullet(title, message)
+        #elif self.title and self.event and self.message:
+            #self.growl(title, app, event, message, host, port, timeout, icon)
+        #elif self.title and self.message:
+            #if active_nmd:
+                #self.nmd(title, message)
+            #if active_pushbullet:
+                #self.pushbullet(title, message)
+        if not self.title: self.title = 'xnotify'
+        if not self.message: self.message = 'xnotify'
+        if not self.app: self.app = 'xnotify'
+        if not self.event: self.event = 'xnotify'
 
     @classmethod
     def register(self, app, event, iconpath, timeout=20):
+        '''
+            Growl only
+        '''        
         debug(app = app)
         debug(event = event)
         debug(iconpath = iconpath)
@@ -121,6 +116,60 @@ class notify(object):
             cls.conf = configset(configfile)
             return cls.conf
             
+    @classmethod
+    def _ntfy(cls, data, **kwargs):
+        debug(server = kwargs.get('server'))
+        if kwargs.get('server'):
+            if isinstance(kwargs.get('server'), list):
+                for i in kwargs.get('server'):
+                    if not 'http' == i[:4]:
+                        i = 'http://' + i 
+                    a = requests.post(i, data = data)
+                    debug(a = a, debug = 1)
+                    debug(content = a.content, debug = 1)
+            else:
+                a = requests.post(kwargs.get('server'), data = data)
+                debug(a = a)
+                debug(content = a.content)                
+        return True
+                
+    @classmethod
+    def ntfy(cls, app, title, message, icon = None, priority = None, tags = [], click = None, attach = None, action = None, email = None, filename = None, server = None):
+        url = server or cls.conf.get_config('ntfy', 'server') or 'https://ntfy.sh/'
+        debug(url = url)
+        if "," in url:
+            url = str(url).split(",")
+            url = [i.strip() for i in url]
+        debug(url = url)
+        if icon:
+            debug(check_icon = icon[:4])
+            if not 'http' == icon[:4]:
+                print(make_colors("[ntfy] Invalid Icon, icon must url"))
+                icon = None
+        if tags:
+            if not isinstance(tags, list):
+                tags = [str(tags)]
+        data = json.dumps(
+            {
+                'topic': app,
+                'message': message,
+                'title': title,
+                'tags': tags,
+                'priority': priority,
+                'attach': attach,
+                'filename': filename,
+                'click': click,
+                'action': action,
+                'icon': icon,
+            }
+        )
+        debug(data = data, debug = 1)
+        a = cls._ntfy(data, app = app, title = title, message = message, icon = icon, priority = priority, tags = tags, click = click, attach = attach, action = action, email = email, filename = filename, server = url)
+        #a = requests.post(url, data = data)
+        #debug(a = a)
+        #debug(content = a.content)
+        return a
+    
     @classmethod
     def growl(cls, title = None, app = None, event = None, message = None, host = None, port = None, timeout = None, icon = None, iconpath = None, gntp_callback = None):
         if not title: title = cls.title
@@ -293,37 +342,55 @@ class notify(object):
         return cls.conf.write_config(*args, **kwargs)
 
     @classmethod
-    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, debugx = True, iconpath=None, gntp_callback = None):
+    def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, ntfy = True, debugx = True, iconpath=None, gntp_callback = None, ntfy_servers = None, **kwargs):
+        debug(ntfy_servers = ntfy_servers)
         debug(host = host)
-        if cls.title and not title:
-            title = cls.title
-        if cls.message and not message:
-            message = cls.message
-        if cls.app and not app:
-            app = cls.app
-        if cls.event and not event:
-            event = cls.event
-        if cls.host and not host:
-            host = cls.conf.get_config_as_list('growl','host') or cls.host
-            debug(host = host)
-        if cls.port and not port:
-            port = cls.port
-        if cls.timeout and not timeout:
-            timeout = cls.timeout
-        
-        if cls.icon and not icon:
-            icon = cls.icon
-        if cls.pushbullet_api and not pushbullet_api:
-            pushbullet_api = cls.pushbullet_api
-        if cls.nmd_api and not nmd_api:
-            nmd_api = cls.nmd_api
+        title = title or cls.title or 'xnotify'
+        message = message or cls.message
+        app = app or cls.app or 'xnotify'
+        event = event or cls.event or 'xnotify'
+        host = host or cls.conf.get_config_as_list('growl','host') or cls.host or '127.0.0.1'
+        debug(host = host)
+        port = port or cls.port or 5432
+        timeout = timeout or cls.timeout or 20
+        icon = icon or cls.icon
+        pushbullet_api = pushbullet_api or cls.pushbullet_api or cls.conf.get_config('pushbullet', 'api')
+        nmd_api = nmd_api or cls.nmd_api or cls.conf.get_config('nmd', 'api')
         
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
+            print("send to growl ..")
             cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
         if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
-            cls.pushbullet(title, message, pushbullet_api, debugx)
+            print("send to pushbullet ...")
+            if cls.conf.get_config('pushbullet', 'api'):
+                cls.pushbullet(title, message, pushbullet_api, debugx)
+            else:
+                print("pushbullet is active but no API !")
+            
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
-            cls.nmd(title, message, nmd_api, debugx = debugx)
+            print("send to nmd ...")
+            if cls.conf.get_config('nmd', 'api'):
+                cls.nmd(title, message, nmd_api, debugx = debugx)
+            else:
+                print("NMD is active but no API !")
+        debug(ntfy = ntfy)
+        if ntfy or cls.conf.get_config('service', 'nfty', '0') == '1' or cls.conf.get_config('service', 'nfty', '0') == 1:
+            print("send to ntfy ...")
+            ntfy_icon = None
+            if icon or iconpath:
+                try:
+                    if 'http' == icon[:4]:
+                        ntfy_icon = icon
+                except:
+                    pass
+                try:
+                    if 'http' == iconpath[:4]:
+                        ntfy_icon = iconpath
+                except:
+                    pass
+            debug(ntfy_servers = ntfy_servers)
+            cls.ntfy(app, title, message, ntfy_icon, server = ntfy_servers)
+            
         cls.client(title, message)
 
     @classmethod
@@ -410,6 +477,16 @@ class notify(object):
         parser.add_argument('MESSAGE', action = 'store', help = 'Message')
         parser.add_argument('-s', '--server', action = 'store_true', help = 'start server')
         parser.add_argument('-c', '--client', action = 'store_true', help = 'start test client')
+        parser.add_argument('--ntfy', action = 'store_true', help = 'Active ntfy')
+        parser.add_argument('--ntfy-hosts', action = 'store', help = 'ntfy servers', nargs = '*')
+        parser.add_argument('--ntfy-icon', action = 'store', help = 'ntfy icon, icon must url')
+        parser.add_argument('--ntfy-priority', action = 'store', help = 'ntfy priority', type = int)
+        parser.add_argument('--ntfy-tags', action = 'store', help = 'ntfy tags')
+        parser.add_argument('--ntfy-click', action = 'store', help = 'ntfy click')
+        parser.add_argument('--ntfy-attach', action = 'store', help = 'ntfy attach')
+        parser.add_argument('--ntfy-email', action = 'store', help = 'ntfy email')
+        parser.add_argument('--ntfy-filename', action = 'store', help = 'ntfy filename')
+        
 
         if len(sys.argv) == 1:
             parser.print_help()
@@ -427,8 +504,11 @@ class notify(object):
                     cls.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
                 elif args.nmd:
                     cls.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
+                elif args.ntfy:
+                    cls.ntfy(args.app, args.TITLE, args.MESSAGE, args.ntfy_icon, args.ntfy_priority, args.ntfy_tags, args.ntfy_click, args.ntfy_attach, None, args.ntfy_email, args.ntfy_filename, server=args.ntfy_hosts)
                 else:
-                    cls.notify(args.TITLE, args.MESSAGE, args.app, args.event, args.host, args.port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api)
+                    debug(args_ntfy_hosts = args.ntfy_hosts)
+                    cls.send(args.TITLE, args.MESSAGE, args.app, args.event, args.host, args.port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api, ntfy_servers = args.ntfy_hosts)
                 if args.server:
                     cls.server()
                 if args.client:
@@ -440,6 +520,8 @@ def usage():
     c.usage()
 
 if __name__ == '__main__':
+    #notify.ntfy('battmon', 'test from python', "FULL", "https://www.clipartmax.com/png/small/457-4573861_512-x-512-1-battery-full-icon-png.png")
+    #notify.ntfy('battmon', 'test from python', "FULL", "c:\PROJECTS\battmon\icon.png")
     usage()
     #c.server()
     #c.test_client()
