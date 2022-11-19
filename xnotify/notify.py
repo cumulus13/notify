@@ -130,8 +130,8 @@ class notify(object):
                         i = 'http://' + i
                     try:
                         a = requests.post(i, data = data)
-                        debug(a = a, debug = 1)
-                        debug(content = a.content, debug = 1)
+                        debug(a = a)
+                        debug(content = a.content)
                     except:
                         print(traceback.format_exc())
             else:
@@ -170,7 +170,7 @@ class notify(object):
                 'icon': icon,
             }
         )
-        debug(data = data, debug = 1)
+        debug(data = data)
         a = cls._ntfy(data, app = app, title = title, message = message, icon = icon, priority = priority, tags = tags, click = click, attach = attach, action = action, email = email, filename = filename, server = url)
         #a = requests.post(url, data = data)
         #debug(a = a)
