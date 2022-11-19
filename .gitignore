@@ -1,6 +1,8 @@
 *.orig
 *.pyc
 *.bak
+__init__.ini
+growl.ini
 *.zip
 *.rar
 *.7z
