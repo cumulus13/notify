@@ -15,3 +15,7 @@ growl.ini
 *.egg-info/
 traceback.log
 __pycache__/
+*_BACKUP_*
+*_BASE_*
+*_LOCAL_*
+*_REMOTE_*
