@@ -223,7 +223,11 @@ class notify(object):
         debug(is_growl_active = cls.conf.get_config('service', 'growl'))
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
             if not isinstance(host, list): host = [host]
-            growl = sendgrowl.Growl(app, event, icon)
+            if not isinstance(event, list):
+                EVENT = [event]
+            else:
+                EVENT = event
+            growl = sendgrowl.Growl(app, EVENT, icon)
             error = False
             debug(event = event)
             debug(title = title)
@@ -234,6 +238,7 @@ class notify(object):
             debug(timeout = timeout)
             debug(gntp_callback = gntp_callback)
             debug(growl_file = sendgrowl.__file__)
+            
             try:
                 growl.Publish(event, title, message, host = host, port = port, timeout = timeout, icon = icon, iconpath = iconpath, gntp_callback = gntp_callback, app = app)
             except:
@@ -350,6 +355,7 @@ class notify(object):
 
     @classmethod
     def send(cls, title = "this is title", message = "this is message", app = None, event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, ntfy = True, debugx = True, iconpath=None, gntp_callback = None, ntfy_servers = None, **kwargs):
+        p1 = p2 = p3 = p4 = None
         debug(ntfy_servers = ntfy_servers)
         debug(host = host)
         title = title or cls.title or 'xnotify'
@@ -366,11 +372,19 @@ class notify(object):
         
         if growl or cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1:
             print("send to growl ..")
+            debug(title = title, debug = 1)
+            debug(app = app, debug = 1)
+            debug(event = event, debug = 1)
+            debug(message = message, debug = 1)
+            debug(host = host, debug = 1)
+            debug(port = port, debug = 1)
+            debug(iconpath = iconpath, debug = 1)
+            debug(gntp_callback = gntp_callback, debug = 1)
             #cls.growl(title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback)
             p1 = Process(target = cls.growl, args = (title, app, event, message, host, port, timeout, icon, iconpath, gntp_callback))
             p1.start()
         if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
-            print("send to pushbullet ...")
+            #print("send to pushbullet ...")
             if cls.conf.get_config('pushbullet', 'api'):
                 #cls.pushbullet(title, message, pushbullet_api, debugx)
                 p2 = Process(target = cls.pushbullet, args = (title, message, pushbullet_api, debugx))
@@ -379,7 +393,7 @@ class notify(object):
                 print("pushbullet is active but no API !")
             
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
-            print("send to nmd ...")
+            #print("send to nmd ...")
             if cls.conf.get_config('nmd', 'api'):
                 #cls.nmd(title, message, nmd_api, debugx = debugx)
                 p3 = Process(target = cls.nmd, args = (title, message, nmd_api, debugx))
@@ -388,7 +402,7 @@ class notify(object):
                 print("NMD is active but no API !")
         debug(ntfy = ntfy)
         if ntfy or cls.conf.get_config('service', 'nfty', '0') == '1' or cls.conf.get_config('service', 'nfty', '0') == 1:
-            print("send to ntfy ...")
+            #print("send to ntfy ...")
             ntfy_icon = None
             if icon or iconpath:
                 try:
@@ -542,3 +556,4 @@ if __name__ == '__main__':
     #c.test_client()
 
 # by LICFACE <licface@yahoo.com>
+
