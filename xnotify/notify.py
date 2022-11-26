@@ -24,6 +24,7 @@ else:
 from datetime import datetime
 import socket
 from gntplib import Publisher, Resource
+import bitmath
 #sys.exc_info = traceback.format_exception
 
 class notify(object):
@@ -44,6 +45,7 @@ class notify(object):
     nmd_api = False
     gntp_callback = None
     ntfy_server = None
+    logfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), "notify.log")
 
     configname = os.path.join(os.path.dirname(__file__), 'notify.ini')
     if os.path.isfile('notify.ini'):
@@ -83,6 +85,7 @@ class notify(object):
             #configset = util.module_from_spec(spec)
             #sys.modules['configset'] = configset
             #spec.loader.exec_module(configset)
+            self.logger(str(traceback.format_exc()), 'error')
             self.conf = configset.configset(self.configname)
         
         if self.title and self.message and (self.active_growl or self.active_pushbullet or self.active_nmd or self.active_ntfy):
@@ -102,6 +105,41 @@ class notify(object):
         if not self.event: self.event = 'xnotify'
 
     @classmethod
+    def logger(self, message, status="info"):
+        #logfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.basename(self.conf.configname).split(".")[0] + ".log")
+        logfile = self.logfile or os.path.join(os.path.dirname(os.path.realpath(__file__)), "notify.log")
+        if not os.path.isfile(logfile):
+            lf = open(logfile, 'wb')
+            lf.close()
+        real_size = bitmath.getsize(logfile).kB.value
+        max_size = self.conf.get_config("LOG", 'max_size')
+        debug(max_size = max_size)
+        if max_size:
+            debug(is_max_size = True)
+            try:
+                max_size = bitmath.parse_string_unsafe(max_size).kB.value
+            except:
+                max_size = 0
+            if real_size > max_size:
+                try:
+                    os.remove(logfile)
+                except:
+                    print("ERROR: [remove logfile]:", traceback.format_exc())
+                try:
+                    lf = open(logfile, 'wb')
+                    lf.close()
+                except:
+                    print("ERROR: [renew logfile]:", traceback.format_exc())
+
+
+        str_format = datetime.strftime(datetime.now(), "%Y/%m/%d %H:%M:%S.%f") + " - [{}] {}".format(status, message) + "\n"
+        with open(logfile, 'ab') as ff:
+            if sys.version_info.major == 3:
+                ff.write(bytes(str_format, encoding='utf-8'))
+            else:
+                ff.write(str_format)
+        
+    @classmethod
     def register(self, app, event, iconpath, timeout=20):
         '''
             Growl only
@@ -111,8 +149,14 @@ class notify(object):
         debug(iconpath = iconpath)
         debug(timeout = timeout)
         
-        s = sendgrowl.growl(app, event, iconpath, timeout = timeout)
-        s.register()
+        try:
+            s = sendgrowl.growl(app, event, iconpath, timeout = timeout)
+        except:
+            self.logger(str(traceback.format_exc()), 'error')
+        try:
+            s.register()
+        except:
+            self.logger(str(traceback.format_exc()), 'error')
         
     @classmethod
     def set_config(cls, configfile):
@@ -121,7 +165,7 @@ class notify(object):
             return cls.conf
             
     @classmethod
-    def _ntfy(cls, data, **kwargs):
+    def _ntfy(self, data, **kwargs):
         debug(server = kwargs.get('server'))
         if kwargs.get('server'):
             if isinstance(kwargs.get('server'), list):
@@ -133,6 +177,7 @@ class notify(object):
                         debug(a = a)
                         debug(content = a.content)
                     except:
+                        self.logger(str(traceback.format_exc()), 'error')
                         print(traceback.format_exc())
             else:
                 a = requests.post(kwargs.get('server'), data = data)
@@ -141,13 +186,14 @@ class notify(object):
         return True
                 
     @classmethod
-    def ntfy(cls, app, title, message, icon = None, server = None, priority = None, tags = [], click = None, attach = None, action = None, email = None, filename = None):
-        url = server or cls.ntfy_server or cls.conf.get_config('ntfy', 'server') or 'https://ntfy.sh/'
+    def ntfy(self, app, title, message, icon = None, server = None, priority = None, tags = [], click = None, attach = None, action = None, email = None, filename = None):
+        url = server or self.ntfy_server or self.conf.get_config('ntfy', 'server') or 'https://ntfy.sh/'
         debug(url = url)
         if "," in url:
             url = str(url).split(",")
             url = [i.strip() for i in url]
         debug(url = url)
+        icon = icon or self.conf.get_config('ntfy', 'icon')
         if icon:
             debug(check_icon = icon[:4])
             if not 'http' == icon[:4]:
@@ -171,7 +217,11 @@ class notify(object):
             }
         )
         debug(data = data)
-        a = cls._ntfy(data, app = app, title = title, message = message, icon = icon, priority = priority, tags = tags, click = click, attach = attach, action = action, email = email, filename = filename, server = url)
+        try:
+            a = self._ntfy(data, app = app, title = title, message = message, icon = icon, priority = priority, tags = tags, click = click, attach = attach, action = action, email = email, filename = filename, server = url)
+        except:
+            print("send to ntfy ERROR !, see log file. '{}'".format(self.logfile))
+            self.logger(str(traceback.format_exc()), 'error')
         #a = requests.post(url, data = data)
         #debug(a = a)
         #debug(content = a.content)
@@ -192,36 +242,29 @@ class notify(object):
         if not host: host = cls.conf.get_config('growl', 'host')
         if not port:
             port = cls.conf.get_config('growl', 'port')
-            if port:
-                port = int(port)
-        if not timeout:
-            timeout = cls.timeout
+            if port: port = int(port)
+        if not timeout: timeout = cls.timeout
         debug(icon = icon)
         if not icon: icon = cls.icon or cls.conf.get_config('growl', 'icon')
         debug(icon = icon)
-        if iconpath and not icon:
-            icon = iconpath
+        if iconpath and not icon: icon = iconpath
         if icon:
             if not os.path.isfile(icon): icon = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.path.basename(icon))
         else:
             icon = cls.conf.get_config('growl', 'icon')
         if icon: icon = os.path.realpath(icon)
         debug(icon = icon)
-        if os.path.isfile(icon):
-            iconpath = icon
+        if os.path.isfile(icon): iconpath = icon
         if isinstance(host, str) and "," in host:
             host_ = re.split(",", host)
             host = []
             for i in host_:
                 host.append(i.strip())
-        if not host:
-            host = '127.0.0.1'
-        if not port:
-            port = 23053
-        if not timeout:
-            timeout = 20
+        if not host: host = '127.0.0.1'
+        if not port: port = 23053
+        if not timeout: timeout = 20
         debug(is_growl_active = cls.conf.get_config('service', 'growl'))
-        if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('TRACEBACK_GROWL') == '1' or cls.active_growl:
+        if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('GROWL') == '1' or cls.active_growl:
             if not isinstance(host, list): host = [host]
             if not isinstance(event, list):
                 EVENT = [event]
@@ -242,40 +285,35 @@ class notify(object):
             try:
                 growl.Publish(event, title, message, host = host, port = port, timeout = timeout, icon = icon, iconpath = iconpath, gntp_callback = gntp_callback, app = app)
             except:
-                print(traceback.format_exc())
+                cls.logger(str(traceback.format_exc()), 'error')                
+                print("send to GROWL ERROR !, see log file. '{}'".format(cls.logfile))
+                #print(traceback.format_exc())
                 error = True
             
             if error:
                 print("ERROR:", True)
                 return False
         else:
-            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 or set TRACEBACK_GROWL=1 to activate !', 'lightred', 'lightyellow'))
+            print(make_colors("[GROWL]", 'lightwhite', 'lightred') + " " + make_colors('warning: Growl is set True but not active, please change config file to true or 1 or set GROWL=1 to activate !', 'lightred', 'lightyellow'))
             return False            
 
     @classmethod
     def pushbullet(cls, title = None, message = None, api = None, debugx = True):
-        if not api:
-            api = cls.pushbullet_api
-        if not api:
-            api = cls.conf.get_config('pushbullet', 'api')
-        if not title:
-            title = cls.title
-        if not title:
-            title = cls.conf.get_config('pushbullet', 'title')
-        if not message:
-            message = cls.message
-        if not message:
-            message = cls.conf.get_config('pushbullet', 'message')
+        api = api or cls.pushbullet_api or cls.conf.get_config('pushbullet', 'api')
+        title = title or cls.title or cls.conf.get_config('pushbullet', 'title')
+        message = message or cls.message or cls.conf.get_config('pushbullet', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[Pushbullet]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
             return False
-        if cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == 1 or cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == "1" or os.getenv('TRACEBACK_PUSHBULLET') == '1':
+        if cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == 1 or cls.active_pushbullet or cls.conf.get_config('service', 'pushbullet', value = 0) == "1" or os.getenv('PUSHBULLET') == '1':
             try:
                 pb = PB.Pushbullet(api)
                 pb.push_note(title, message)
                 return True
             except:
+                cls.logger(str(traceback.format_exc()), 'error')                
+                print("send to pushbullet ERROR !, see log file. '{}'".format(cls.logfile))                
                 if os.getenv('DEBUG') == '1':
                     print(make_colors("ERROR [PUSHBULLET]:", 'lightwhite', 'lightred', 'blink'))
                     print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
@@ -291,18 +329,9 @@ class notify(object):
         import warnings
         warnings.filterwarnings("ignore")
         url = "https://www.notifymydevice.com/push"#?ApiKey={0}&PushTitle={1}&PushText={2}"
-        if not api:
-            api = cls.nmd_api
-        if not api:
-            api = cls.conf.get_config('nmd', 'api')
-        if not title:
-            title = cls.title
-        if not title:
-            title = cls.conf.get_config('nmd', 'title')
-        if not message:
-            message = cls.message
-        if not message:
-            message = cls.conf.get_config('nmd', 'message')
+        api = api or cls.nmd_api or cls.conf.get_config('nmd', 'api')
+        title = title or cls.title or cls.conf.get_config('nmd', 'title')
+        message = message or cls.message or cls.conf.get_config('nmd', 'message')
         if not api:
             if os.getenv('DEBUG') == '1':
                 print(make_colors("[NMD]", 'lightwhite', 'lightred') + " " + make_colors('API not Found', 'lightred', 'lightwhite'))
@@ -311,7 +340,7 @@ class notify(object):
         debug(message = message)
         data = {"ApiKey": api, "PushTitle": title,"PushText": message}
         debug(data = data)
-        if cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == 1 or cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == "1" or os.getenv('TRACEBACK_NMD') == '1':
+        if cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == 1 or cls.active_nmd or cls.conf.get_config('service', 'nmd', value = 0) == "1" or os.getenv('NMD') == '1':
             try:
                 a = requests.post(url, data = data, timeout = timeout)
                 return a
@@ -321,6 +350,8 @@ class notify(object):
                     return a
                 except:
                     #traceback.format_exc()
+                    cls.logger(str(traceback.format_exc()), 'error')                
+                    print("send to NMD ERROR !, see log file. '{}'".format(cls.logfile))                    
                     if os.getenv('DEBUG') == '1':
                         print(make_colors("ERROR [NMD]:", 'lightwhite', 'lightred', 'blink'))
                         print(make_colors(traceback.format_exc(), 'lightred', 'lightwhite'))
@@ -385,6 +416,7 @@ class notify(object):
             p1.start()
         if pushbullet or cls.conf.get_config('service', 'pushbullet', '0') == '1' or cls.conf.get_config('service', 'pushbullet', '0') == 1:
             #print("send to pushbullet ...")
+            cls.logger("send to pushbullet ...")            
             if cls.conf.get_config('pushbullet', 'api'):
                 #cls.pushbullet(title, message, pushbullet_api, debugx)
                 p2 = Process(target = cls.pushbullet, args = (title, message, pushbullet_api, debugx))
@@ -394,6 +426,7 @@ class notify(object):
             
         if nmd or cls.conf.get_config('service', 'nmd', '0') == '1' or cls.conf.get_config('service', 'nmd', '0') == 1:
             #print("send to nmd ...")
+            cls.logger("send to nmd ...")
             if cls.conf.get_config('nmd', 'api'):
                 #cls.nmd(title, message, nmd_api, debugx = debugx)
                 p3 = Process(target = cls.nmd, args = (title, message, nmd_api, debugx))
@@ -403,18 +436,21 @@ class notify(object):
         debug(ntfy = ntfy)
         if ntfy or cls.conf.get_config('service', 'nfty', '0') == '1' or cls.conf.get_config('service', 'nfty', '0') == 1:
             #print("send to ntfy ...")
+            cls.logger('send to ntfy ...')
             ntfy_icon = None
             if icon or iconpath:
                 try:
                     if 'http' == icon[:4]:
                         ntfy_icon = icon
                 except:
-                    pass
+                    cls.logger(str(traceback.format_exc()), 'warning')                
+                    #print("send to ntfy ERROR !, see log file. '{}'".format(cls.logfile))                    
                 try:
                     if 'http' == iconpath[:4]:
                         ntfy_icon = iconpath
                 except:
-                    pass
+                    cls.logger(str(traceback.format_exc()), 'warning')
+                    #print("send to ntfy ERROR !, see log file. '{}'".format(cls.logfile))
             debug(ntfy_servers = ntfy_servers)
             #cls.ntfy(app, title, message, ntfy_icon, server = ntfy_servers)
             p4 = Process(target = cls.ntfy, args = (app, title, message, ntfy_icon, ntfy_servers))
@@ -468,9 +504,13 @@ class notify(object):
                         #print("message =", message)
 
                 except:
+                    cls.logger(str(traceback.format_exc()), 'error')                
+                    print("ERROR !, see log file. '{}'".format(cls.logfile))                    
                     traceback.format_exc()
                     sys.exit()
         except:
+            cls.logger(str(traceback.format_exc()), 'error')                
+            print("ERROR !, see log file. '{}'".format(cls.logfile))            
             traceback.format_exc()
             sys.exit()
 
@@ -480,6 +520,8 @@ class notify(object):
         try:
             data = "title: {0} message: {1}".format(title, message)
         except:
+            cls.logger(str(traceback.format_exc()), 'alert')                
+            print("ERROR !, see log file. '{}'".format(cls.logfile))            
             data = "title: {0} message: {1}".format(title.encode('utf-8'), message.encode('utf-8'))
         if sys.version_info.major == 3:
             data = bytes(data.encode('utf-8'))
