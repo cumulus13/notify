@@ -28,10 +28,15 @@ from datetime import datetime
 import socket
 import bitmath
 #sys.exc_info = traceback.format_exception
+SYSLOGX = False
 try:
     from . import syslogx
+    SYSLOGX = True
 except:
-    import syslogx
+    try:
+        import syslogx
+    except:
+        pass
 
 class notify(object):
     
@@ -212,13 +217,14 @@ class notify(object):
             else:
                 try:
                     a = requests.post(kwargs.get('server'), data = data)
+                    debug(a = a)
+                    debug(content = a.content)                
                 except requests.exceptions.ConnectionError:
-                    pass
+                    print(make_colors("[NTFY]", 'lw', 'm') + " " + make_colors('No Internet Connection !', 'lw', 'r'))
                 except:
                     self.logger(str(traceback.format_exc()), 'error')
                     print(traceback.format_exc())
-                debug(a = a)
-                debug(content = a.content)                
+                
         return True
 
     @classmethod
@@ -256,8 +262,10 @@ class notify(object):
         try:
             a = self._ntfy(data, app = app, title = title, message = message, icon = icon, priority = priority, tags = tags, click = click, attach = attach, action = action, email = email, filename = filename, server = url)
         except:
-            print("send to ntfy ERROR !, see log file. '{}'".format(self.logfile))
+            print(make_colors("send to ntfy ERROR !, see log file.", 'lw', 'r') + " " + make_colors("'{}'".format(self.logfile), 'lc'))
             self.logger(str(traceback.format_exc()), 'error')
+            print(traceback.format_exc())
+            return None
         #a = requests.post(url, data = data)
         #debug(a = a)
         #debug(content = a.content)
@@ -432,6 +440,9 @@ class notify(object):
         server_host = server_host or '0.0.0.0'
         server_port = server_port or 33000
         
+        debug(is_ntfy_enable = (ntfy and (cls.conf.get_config('service', 'ntfy', '0') == '1' or cls.conf.get_config('service', 'ntfy', '0') == 1)) or os.getenv('NTFY') == '1')
+        
+        
         if os.getenv('XNOTIFY_DEBUG') == '1': print("[XNOTIFY_DEBUG]", "growl:", (growl and (cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1)) or os.getenv('GROWL') == '1')
         if (growl and (cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1)) or os.getenv('GROWL') == '1':
             if os.getenv('XNOTIFY_DEBUG') == '1': print("[XNOTIFY_DEBUG]", 'send to growl ...')
@@ -553,7 +564,8 @@ class notify(object):
                 debug(port = port)
                 tmessage = title + ": " + message
                 #print("TMESSAGE:", tmessage)
-                syslogx.syslog(tmessage, syslogx.LEVEL[(syslog_severity or 'info')], syslogx.FACILITY[(syslog_facility or 'daemon')], host.strip(), int(str(port).strip()))
+                if SYSLOGX:
+                    syslogx.syslog(tmessage, syslogx.LEVEL[(syslog_severity or 'info')], syslogx.FACILITY[(syslog_facility or 'daemon')], host.strip(), int(str(port).strip()))
                 
         return True
 

@@ -89,7 +89,7 @@ setup(
         'configparser',
         'sendgrowl',
         'pydebugger',
-        'pushbullet_py',
+        'pushbullet.py',
         'playsound'
     ],
     entry_points = {

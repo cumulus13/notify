@@ -1,8 +1,4 @@
-*.orig
 *.pyc
-*.bak
-__init__.ini
-growl.ini
 *.zip
 *.rar
 *.7z
@@ -11,11 +7,6 @@ growl.ini
 .hg/
 *.hgignore
 *.hgtags
-*dist/
+dist/
+build/
 *.egg-info/
-traceback.log
-__pycache__/
-*_BACKUP_*
-*_BASE_*
-*_LOCAL_*
-*_REMOTE_*
