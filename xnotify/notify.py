@@ -287,9 +287,10 @@ class notify(object):
         debug(iconpath = iconpath)
         debug(host = host)
         
-        if host and isinstance(host, str): host = list(filter(None, [i.split() for i in re.split(",|\n", host)])) or ['127.0.0.1']
+        if host and isinstance(host, str): host = list(filter(None, [i.split() for i in re.split(",|\n", host)]))[0] or ['127.0.0.1']
         debug(is_growl_active = cls.conf.get_config('service', 'growl'))
         if cls.conf.get_config('service', 'growl', value = 0) == 1 or cls.conf.get_config('service', 'growl', value = 0) == "1" or os.getenv('GROWL') == '1' or cls.active_growl:
+            debug(host = host)
             if not isinstance(host, list): host = [host]
             if not isinstance(event, list):
                 EVENT = [event]
