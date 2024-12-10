@@ -1,8 +1,7 @@
+# cython: language_level=3
 #!/usr/bin/env python2
 from __future__ import print_function
 import sys, os
-import ctraceback
-sys.excepthook = ctraceback.CTraceback
 import argparse
 from configset import configset
 import pushbullet as PB
@@ -20,6 +19,7 @@ import requests
 import re
 import json
 from multiprocessing import Process
+import mimetypes
 if sys.platform == 'win32':
     import winsound
 else:
@@ -41,7 +41,7 @@ except:
     except:
         pass
 
-class notify(object):
+cdef class notify:
 
     '''
         Notification handle suport Growl, NMD, NTFY, Pushbullet, Local notification
@@ -81,28 +81,28 @@ class notify(object):
     except:
         conf = configset.configset(configname)
 
-    def __init__(self, app, event = None, title = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl    = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, callback = None, gntp_callback = None, active_ntfy = True, ntfy_server = None, sticky = False, priority = None, ntfy_icon = '', syslog = True, syslog_server = [], debugx = False, server_host = None, server_port = None, to_server_only = None, message_color = None, syslog_severity = None, syslog_facility = None, **kwargs):
+    def __init__(self, app, event = None, title = None, message = None, host = None, port = None, timeout = None, icon = None, active_pushbullet = True, active_growl = True, active_nmd = True, pushbullet_api = None, nmd_api = None, direct_run = False, callback = None, gntp_callback = None, active_ntfy = True, ntfy_server = None, sticky = False, priority = None, ntfy_icon = '', syslog = True, syslog_server = [], debugx = False, server_host = None, server_port = None, to_server_only = None, message_color = None, syslog_severity = None, syslog_facility = None, **kwargs):
         super(notify, self)
         self.title = title or 'xnotify'
         notify.title = title or notify.title
         debug(self_title = self.title)
-        
+
         self.app = app or 'xnotify'
         debug(self_app = self.app)
         notify.app = app or 'xnotify'
-        
+
         if isinstance(event, str) and event:
             notify.event.append(event)
         elif isinstance(event, list) and event:
             notify.event += event
             notify.event = list(set(notify.event))
-        
-        self.event = notify.event or []
+
+        self.event = notify.event or ['xnotify']
         debug(self_event = self.event)
-        
+
         self.message = message or notify.message
         debug(self_message = self.message)
-        
+
         self.host = host or notify.host
         self.port = port or notify.port
         self.timeout = timeout or notify.timeout
@@ -134,11 +134,11 @@ class notify(object):
             #spec.loader.exec_module(configset)
             self.logger(str(traceback.format_exc()), 'error')
             self.conf = configset.configset(self.configname)
-        
+
         if self.title and self.message and self.app and self.event:
             debug(self_app = self.app)
             self.send(self.app, self.event, self.title, self.message, self.event, self.host, self.port, self.timeout, self.icon, self.pushbullet_api, self.nmd_api, self.active_growl, self.active_pushbullet, self.active_nmd, self.active_ntfy, debugx, callback, self.gntp_callback, self.ntfy_server, self.sticky, self.priority, self.ntfy_icon, self.syslog, self.syslog_server, server_host, server_port, to_server_only, message_color, syslog_severity, syslog_facility, **kwargs)
-            
+
         debug(self_app = self.app)
 
     @classmethod
@@ -175,30 +175,6 @@ class notify(object):
                 ff.write(bytes(str_format, encoding='utf-8'))
             else:
                 ff.write(str_format)
-
-    @classmethod
-    def register(self, app, event, iconpath, timeout=20):
-        '''
-            Growl only
-        '''        
-        debug(app = app)
-        debug(event = event)
-        debug(iconpath = iconpath)
-        debug(timeout = timeout)
-
-        host = self.host or '127.0.0.1'
-        port = self.port or 23053
-
-        publisher = Publisher(app, event, host = self.host, port = self.port, icon = iconpath, timeout = timeout)
-        publisher.register()
-        # try:
-        #     s = sendgrowl.growl(app, event, iconpath, timeout = timeout)
-        # except:
-        #     self.logger(str(traceback.format_exc()), 'error')
-        # try:
-        #     s.register()
-        # except:
-        #     self.logger(str(traceback.format_exc()), 'error')
 
     @classmethod
     def set_config(cls, configfile):
@@ -310,8 +286,8 @@ class notify(object):
                 #if os.path.isfile(imgfile):
                     #if "image" in mimetypes.guess_type(imgfile)[0]:
                         #return imgfile
-                    
-        
+
+
         if not stricon: 
             stricon = """iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAABGdBTUEAAK/INwWK6QAAABl0RVh0
 U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAANcpSURBVHja7L0JtCRXeSZ4b2Tmy3wv377U
@@ -1300,13 +1276,14 @@ h5WQAAAAAElFTkSuQmCC"""
                 with open(imgfile, 'w') as img:
                     import base64
                     img.write(base64.b64decode(stricon))            
-                    
+
         if os.getenv('DEBUG_EXTRA'): print("make_icon -> imgfile =", imgfile)
-        
+
         return imgfile
-    
+
+
     @classmethod
-    def growl(cls, app, name = 'info', title = 'xnotify', message = '', event = [], host = None, timeout = None, icon = None, gntp_callback = None, callback = None, sticky = False, priority = None, **kwargs):
+    def growl(cls, app, name = 'info', title = 'xnotify', message = '', event = ['xnotify'], host = None, timeout = None, icon = None, gntp_callback = None, callback = None, sticky = False, priority = None, **kwargs):
         #os.environ.update({'DEBUG': '1',})
         title = title or cls.title or cls.conf.get_config('growl', 'title')
         app = app or cls.app or cls.conf.get_config('growl', 'app')
@@ -1325,15 +1302,14 @@ h5WQAAAAAElFTkSuQmCC"""
                 try:
                     icon = Resource(icon)
                 except:
-                    ctraceback.CTraceback(*sys.exc_info())
                     if os.getenv('TRACEBACK') == '1':
                         print(make_colors(traceback.format_exc(), 'lw', 'r'))
             debug(icon = icon)
         elif icon and isinstance(icon, Resource):
             pass
-        # else:   
-        #     icon = cls.makeicon()
-        #     debug(icon = icon)
+        else:   
+            icon = cls.makeicon()
+            debug(icon = icon)
 
         debug(icon = icon)
         debug(host = host)
@@ -1372,7 +1348,7 @@ h5WQAAAAAElFTkSuQmCC"""
 
         debug(HOSTS = HOSTS)
         debug(event = event)
-        
+
         if not name and isinstance(event, list):
             name = event[0]
 
@@ -1394,21 +1370,13 @@ h5WQAAAAAElFTkSuQmCC"""
                 debug(HOST = HOST)
                 try:
                     debug(event = event)
-                    debug(icon = icon)
-                    publisher = Publisher(app, event, host = HOST['host'], port = HOST['port'], icon = icon or cls.makeicon(), timeout = timeout)
+                    publisher = Publisher(app, event, host = HOST['host'], port = HOST['port'], icon = icon)
+                    publisher.register()
                     publisher.publish(name, title, message, None, sticky, priority, icon, None, callback, gntp_callback, **kwargs)
                 except:
-                    try:
-                        debug(event = event)
-                        debug(icon = icon)
-                        publisher = Publisher(app, event, host = HOST['host'], port = HOST['port'], icon = icon or cls.makeicon(), timeout = timeout)
-                        publisher.register()
-                        publisher.publish(name, title, message, None, sticky, priority, icon, None, callback, gntp_callback, **kwargs)
-                    except:
-                        ctraceback.CTraceback(*sys.exc_info())
-                        if os.getenv('TRACEBACK'): print(traceback.format_exc())
-                        print(make_colors("ERROR:", 'lw', 'r'), f"{make_colors('Cant send', 'lw', 'bl')} {make_colors('notify', 'b', 'ly')} {make_colors('to GROWL !', 'b', 'lg')} {make_colors(HOST, 'lw', 'm')}")
-                        error = True
+                    if os.getenv('TRACEBACK'): print(traceback.format_exc())
+                    print(make_colors("ERROR:", 'lw', 'r'), f"{make_colors('Cant send', 'lw', 'bl')} {make_colors('notify', 'b', 'ly')} {make_colors('to GROWL !', 'b', 'lg')} {make_colors(HOST, 'lw', 'm')}")
+                    error = True
             if error:
                 return False    
             return True
@@ -1439,7 +1407,6 @@ h5WQAAAAAElFTkSuQmCC"""
                 if os.getenv('DEBUG'): os.environ.pop('DEBUG')
                 return True
             except:
-                ctraceback.CTraceback(*sys.exc_info())
                 cls.logger(str(traceback.format_exc(growl = 0, syslog = 0)), 'error')                
                 print("send to pushbullet ERROR !, see log file. '{}'".format(cls.logfile))                
                 if os.getenv('DEBUG') == '1':
@@ -1481,7 +1448,6 @@ h5WQAAAAAElFTkSuQmCC"""
                 a = requests.post(url, data = data, timeout = timeout)
                 return a
             except:
-                ctraceback.CTraceback(*sys.exc_info())
                 try:
                     a = requests.post(url, data = data, timeout = timeout, verify = False)
                     debug(a = a)
@@ -1489,7 +1455,7 @@ h5WQAAAAAElFTkSuQmCC"""
                     if os.getenv('DEBUG'): os.environ.pop('DEBUG')
                     return a
                 except:
-                    ctraceback.CTraceback(*sys.exc_info())
+                    #traceback.format_exc()
                     cls.logger(str(traceback.format_exc(growl = 0, syslog = 0)), 'error')                
 
                     if os.getenv('DEBUG') == '1' or os.getenv('TRACEBACK') == '1':
@@ -1532,7 +1498,7 @@ h5WQAAAAAElFTkSuQmCC"""
     @classmethod
     def send(cls, app = None, name = None, title = "this is title", message = "this is message", event = None, host = None, port = None, timeout = None, icon = None, pushbullet_api = None, nmd_api = None, growl = True, pushbullet = False, nmd = False, ntfy = True, debugx = False, callback = None, gntp_callback = None, ntfy_servers = None, sticky = False, priority = None, ntfy_icon = '', syslog = True, syslog_server = [], server_host = None, server_port = None, to_server_only = False, message_color = None, syslog_severity = 'info', syslog_facility = 'daemon', **kwargs):
         if debugx: os.environ.update({'DEBUG': '1',})
-        
+
         if isinstance(name, list) and len(name) > 0: name = name[0]
 
         debug(cls_server_as_router = cls.server_as_router)
@@ -1557,7 +1523,7 @@ h5WQAAAAAElFTkSuQmCC"""
             event = list(set(event))
             debug(event = event)
         else:
-            event = event or cls.event or []
+            event = event or cls.event or ['xnotify']
             debug(event = event)
         if isinstance(event, list) and name and not name in event: event.append(name)
         debug(event = event)
@@ -1586,6 +1552,7 @@ h5WQAAAAAElFTkSuQmCC"""
 
         debug(is_ntfy_enable = (ntfy and (cls.conf.get_config('service', 'ntfy', '0') == '1' or cls.conf.get_config('service', 'ntfy', '0') == 1)) or os.getenv('NTFY') == '1')
 
+
         if os.getenv('XNOTIFY_DEBUG') == '1': print("[XNOTIFY_DEBUG]", "growl:", (growl and (cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1)) or os.getenv('GROWL') == '1')
 
         if (growl and (cls.conf.get_config('service', 'growl', '1') == '1' or cls.conf.get_config('service', 'growl', '1') == 1)) or os.getenv('GROWL') == '1':
@@ -1609,7 +1576,6 @@ h5WQAAAAAElFTkSuQmCC"""
                 p1 = Process(target = cls.growl, args = (app, name, title, message, event, host, timeout, icon, gntp_callback, callback, sticky, priority), kwargs = kwargs)
                 p1.start()
             except:
-                ctraceback.CTraceback(*sys.exc_info())
                 cls.logger(traceback.format_exc(growl = 0, syslog = 0), 'error')
                 print("error send message to growl ! [see log file !]")
                 if os.getenv('TRACEBACK') == '1':
@@ -1635,7 +1601,7 @@ h5WQAAAAAElFTkSuQmCC"""
                         #print("error send message to pushbullet ! [see log file !]")
 
                     #traceback.format_exc()
-                if os.getenv('XNOTIFY_DEBUG') == '1': aprint("[XNOTIFY_DEBUG]", make_colors("pushbullet error", 'lw', 'r'))
+                if os.getenv('XNOTIFY_DEBUG') == '1': print("[XNOTIFY_DEBUG]", make_colors("pushbullet error", 'lw', 'r'))
             else:
                 print(make_colors("pushbullet is active but no API !", 'b', 'y'))
 
@@ -1783,7 +1749,6 @@ h5WQAAAAAElFTkSuQmCC"""
 
     def usage(cls):
         parser = argparse.ArgumentParser(formatter_class = argparse.RawTextHelpFormatter)
-        # parser.add_argument('COMMAND', help = 'Command [serve]', nargs='?')
         parser.add_argument('-g', '--growl', action = 'store_true', help = 'Active Growl')
         parser.add_argument('-p', '--pushbullet', action = 'store_true', help = 'Active Pushbullet')
         parser.add_argument('-n', '--nmd', action = 'store_true', help = 'Active NotifyMyAndroid')
@@ -1796,8 +1761,8 @@ h5WQAAAAAElFTkSuQmCC"""
         parser.add_argument('--growl-port', action = 'store', help = 'Port for Growl and Snarl')
         parser.add_argument('-t', '--timeout', action = 'store', help = 'Timeout for Growl and Snarl')
         parser.add_argument('-x', '--priority', action = 'store', help = 'Priority for Growl and Snarl')
-        parser.add_argument('TITLE', action = 'store', help = 'Title of Message', nargs='?')
-        parser.add_argument('MESSAGE', action = 'store', help = 'Message', nargs='?')
+        parser.add_argument('TITLE', action = 'store', help = 'Title of Message')
+        parser.add_argument('MESSAGE', action = 'store', help = 'Message')
         parser.add_argument('-s', '--server', action = 'store_true', help = 'start server')
         parser.add_argument('-r', '--server-as-router', action = 'store_true', help = 'start server as router')
         parser.add_argument('-H', '--server-host', action = 'store', help = 'Server/Router Bind/Listen On, default = 0.0.0.0', default = '0.0.0.0')
@@ -1845,42 +1810,38 @@ h5WQAAAAAElFTkSuQmCC"""
                 cls.active_pushbullet = args.no_pushbullet
                 cls.active_ntfy = args.no_ntfy
 
-                if args.server:
-                    cls.server()
+                if args.to_server_only:
+                    cls.syslog = False
+                    cls.active_growl = False
+                    cls.active_nmd = False
+                    cls.active_pushbullet = False
+                    cls.active_ntfy = False
+
+                gntp_callback = None
+                if args.callback:
+                    gntp_callback = eval(args.callback)
+
+                if args.growl and not args.to_server_only:
+                    #cls.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.growl_host, args.growl_port, args.timeout, args.icon)
+                    cls.growl(args.app, args.EVENT, args.TITLE, args.MESSAGE, args.EVENT, args.growl_host, args.timeout, args.icon, sticky = args.sticky)
+                elif args.pushbullet and not args.to_server_only:
+                    cls.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
+                elif args.nmd and not args.to_server_only:
+                    cls.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
+                elif args.ntfy and not args.to_server_only:
+                    cls.ntfy(args.app, args.TITLE, args.MESSAGE, args.ntfy_icon, args.ntfy_priority, args.ntfy_tags, args.ntfy_click, args.ntfy_attach, None, args.ntfy_email, args.ntfy_filename, server=args.ntfy_hosts)
                 else:
-                    if args.to_server_only:
-                        cls.syslog = False
-                        cls.active_growl = False
-                        cls.active_nmd = False
-                        cls.active_pushbullet = False
-                        cls.active_ntfy = False
+                    debug(args_ntfy_hosts = args.ntfy_hosts)
+                    server_host = args.server_host
+                    if server_host == '0.0.0.0':
+                        server_host = '127.0.0.1'                    
+                    if args.server or args.server_as_router:
+                        cls.server(args.server_host, args.server_port, args.server_as_router)
 
-                    gntp_callback = None
-                    if args.callback:
-                        gntp_callback = eval(args.callback)
-
-                    if args.TITLE and args.MESSAGE:
-                        if args.growl and not args.to_server_only:
-                            #cls.growl(args.TITLE, args.app, args.event, args.MESSAGE, args.growl_host, args.growl_port, args.timeout, args.icon)
-                            cls.growl(args.app, args.event, args.TITLE, args.MESSAGE, args.event, args.growl_host, args.timeout, args.icon, sticky = args.sticky)
-                        elif args.pushbullet and not args.to_server_only:
-                            cls.pushbullet(args.TITLE, args.MESSAGE, args.pushbullet_api)
-                        elif args.nmd and not args.to_server_only:
-                            cls.nmd(args.TITLE, args.MESSAGE, args.nmd_api)
-                        elif args.ntfy and not args.to_server_only:
-                            cls.ntfy(args.app, args.TITLE, args.MESSAGE, args.ntfy_icon, args.ntfy_priority, args.ntfy_tags, args.ntfy_click, args.ntfy_attach, None, args.ntfy_email, args.ntfy_filename, server=args.ntfy_hosts)
-                        else:
-                            debug(args_ntfy_hosts = args.ntfy_hosts)
-                            server_host = args.server_host
-                            if server_host == '0.0.0.0':
-                                server_host = '127.0.0.1'                    
-                            if args.server or args.server_as_router:
-                                cls.server(args.server_host, args.server_port, args.server_as_router)
-
-                            elif args.client:
-                                cls.client(args.TITLE, args.MESSAGE, server_host, args.server_port)
-                            else:
-                                cls.send(args.app, args.event, args.TITLE, args.MESSAGE, args.event, args.growl_host, args.growl_port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api, args.no_growl, args.no_pushbullet, args.no_nmd, args.no_ntfy, args.debug, gntp_callback, gntp_callback, args.ntfy_hosts, args.sticky, args.priority, args.ntfy_icon, args.no_syslog, args.syslog_server, server_host, args.server_port, args.to_server_only, None, args.syslog_severity)
+                    elif args.client:
+                        cls.client(args.TITLE, args.MESSAGE, server_host, args.server_port)
+                    else:
+                        cls.send(args.app, args.event, args.TITLE, args.MESSAGE, args.event, args.growl_host, args.growl_port, args.timeout, args.icon, args.pushbullet_api, args.nmd_api, args.no_growl, args.no_pushbullet, args.no_nmd, args.no_ntfy, args.debug, gntp_callback, gntp_callback, args.ntfy_hosts, args.sticky, args.priority, args.ntfy_icon, args.no_syslog, args.syslog_server, server_host, args.server_port, args.to_server_only, None, args.syslog_severity)
 
 def usage():
     c = notify('xnotify')
@@ -1892,12 +1853,12 @@ if __name__ == '__main__':
     usage()
     #c.server()
     #c.test_client()
-    
+
     #from mpd import MPDClient
     #c = MPDClient()
     #c.connect('127.0.0.1', 6600)
     #song = c.currentsong()
-    
+
     #n = notify('MPD-Ticker', ['New Song'])
     #n.send(title = 'MPD Ticker - New Song', message = f"{song.get('title')}\n{song.get('album')}\n{song.get('artist')}\n", icon = 'growl.png')
 

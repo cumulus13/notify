@@ -1,12 +1,38 @@
+# cython: language_level=3
+
 #import io
 #import re
 from __future__ import print_function
-from setuptools import setup
-
+from setuptools import setup, Command
+from setuptools.extension import Extension
+from Cython.Build import cythonize  
 import os, sys
 import shutil
 
+os.environ['CL'] = '/Zm2000'
+#os.environ['CC'] = r'gcc.exe'
+#os.environ['CXX'] = r'g++.exe'
+
+#os.add_dll_directory(r'c:\TOOLS\msys64\usr\bin')
+
+import __version__
+version = __version__.version
+
 NAME = "xnotify"
+
+extensions = [
+    Extension(
+        "xnotify.notify",
+        ["xnotify/notify.pyx"],
+        extra_compile_args=['/O2', '/EHsc', '/bigobj'],
+        extra_link_args=['/LARGEADDRESSAWARE']
+    )
+]
+
+#sys.argv.extend(['build', '--compiler=mingw32'])
+
+#ext_modules = cythonize(extensions)
+ext_modules = [Extension('notify', sources = ['xnotify/notify.py'])]
 
 def get_version():
     """Get version and version_info without importing the entire module."""
@@ -23,7 +49,7 @@ def get_version():
         return vi._get_canonical(), vi._get_dev_status()
     else:
         import imp
-        vi = imp.load_source("meat", "__meta__.py")
+        vi = imp.load_source("meta", "__meta__.py")
         return vi.__version__, vi.__status__
 
 
@@ -73,7 +99,7 @@ setup(
         "Documentation": "https://github.com/cumulus13/xnotify",
         "Code": "https://github.com/cumulus13/xnotify",
     },
-    license="BSD",
+    license="MIT License",
     author="Hadi Cahyadi LD",
     author_email="cumulus13@gmail.com",
     maintainer="cumulus13 Team",
@@ -82,6 +108,10 @@ setup(
     # long_description=readme,
     # long_description_content_type="text/markdown",
     packages=[NAME],
+    keywords = "send notification to growl, NMD, Pushbullet, syslog, NTFY", 
+    include_package_data=True,
+    zip_safe=False,
+    ext_modules=ext_modules,
     install_requires=[
         'make_colors>=3.12',
         'configset',
@@ -90,7 +120,8 @@ setup(
         'sendgrowl',
         'pydebugger',
         'pushbullet_py',
-        'playsound'
+        'playsound',
+        'requests'
     ],
     entry_points = {
          "console_scripts": [
