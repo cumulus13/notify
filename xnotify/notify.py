@@ -30,6 +30,8 @@ else:
 from datetime import datetime
 import socket
 import bitmath
+import mimetypes
+
 #sys.exc_info = traceback.format_exception
 SYSLOGX = False
 try:
@@ -140,6 +142,7 @@ class notify(object):
             self.send(self.app, self.event, self.title, self.message, self.event, self.host, self.port, self.timeout, self.icon, self.pushbullet_api, self.nmd_api, self.active_growl, self.active_pushbullet, self.active_nmd, self.active_ntfy, debugx, callback, self.gntp_callback, self.ntfy_server, self.sticky, self.priority, self.ntfy_icon, self.syslog, self.syslog_server, server_host, server_port, to_server_only, message_color, syslog_severity, syslog_facility, **kwargs)
             
         debug(self_app = self.app)
+        debug(self_icon = self.icon)
 
     @classmethod
     def logger(self, message, status="info"):
@@ -1318,7 +1321,7 @@ h5WQAAAAAElFTkSuQmCC"""
         sticky = sticky or cls.sticky or cls.conf.get_config('growl', 'sticky') or False
         priority = priority or cls.priority or cls.conf.get_config('growl', 'priority') or None
         timeout = timeout or cls.timeout or cls.conf.get_config('growl', 'timeout')
-        icon = icon or cls.icon or cls.conf.get_config('growl', 'icon')
+        icon = icon or cls.icon or notify.icon or cls.conf.get_config('growl', 'icon')
         debug(icon = icon)
         if icon and not isinstance(icon, Resource):
             if not os.path.isfile(icon):
@@ -1565,6 +1568,8 @@ h5WQAAAAAElFTkSuQmCC"""
         port = port or cls.port or 5432
         timeout = timeout or cls.timeout or 20
         icon = icon or cls.icon
+        debug(cls_icon = cls.icon)
+        debug(icon = icon)
         pushbullet_api = pushbullet_api or cls.pushbullet_api or cls.conf.get_config('pushbullet', 'api')
         nmd_api = nmd_api or cls.nmd_api or cls.conf.get_config('nmd', 'api')
         sticky = sticky or cls.sticky
@@ -1635,7 +1640,7 @@ h5WQAAAAAElFTkSuQmCC"""
                         #print("error send message to pushbullet ! [see log file !]")
 
                     #traceback.format_exc()
-                if os.getenv('XNOTIFY_DEBUG') == '1': aprint("[XNOTIFY_DEBUG]", make_colors("pushbullet error", 'lw', 'r'))
+                if os.getenv('XNOTIFY_DEBUG') == '1': print("[XNOTIFY_DEBUG]", make_colors("pushbullet error", 'lw', 'r'))
             else:
                 print(make_colors("pushbullet is active but no API !", 'b', 'y'))
 

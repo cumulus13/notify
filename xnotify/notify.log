@@ -1,0 +1,165 @@
+2024/12/27 19:20:24.587620 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:21:47.100538 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:23:24.550697 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:27:38.812157 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:31:59.860704 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:32:20.537722 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:33:31.375148 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:34:10.476641 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:34:41.269687 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/27 19:35:07.828936 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1438, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
+2024/12/28 00:01:07.468363 - [error] Traceback (most recent call last):
+  File "C:\PROJECTS\xnotify\xnotify\notify.py", line 1440, in pushbullet
+    pb = PB.Pushbullet(api)
+         ^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 38, in __init__
+    self.refresh()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 354, in refresh
+    self._load_devices()
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 71, in _load_devices
+    resp_dict = self._get_data(self.DEVICES_URL)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\SDK\anaconda3\Lib\site-packages\pushbullet\pushbullet.py", line 61, in _get_data
+    raise InvalidKeyError()
+pushbullet.errors.InvalidKeyError
+
